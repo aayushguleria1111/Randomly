@@ -11,11 +11,10 @@
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the Apache License, Version 2.0 (the "License");
-# Installation directory for Gradle.
+# installation directory for Gradle.
 #
 
 PRG="$0"
-# Need this for relative symlinks.
 while [ -h "$PRG" ] ; do
     ls=`ls -ld "$PRG"`
     link=`expr "$ls" : '.*-> \(.*\)$'`
@@ -35,35 +34,23 @@ cd "$SAVED" >/dev/null
 APP_NAME="Gradle"
 APP_BASE_NAME=`basename "$0"`
 
-# Add default JVM options here. You can also use JAVA_OPTS and GRADLE_OPTS to pass JVM options to this script.
-DEFAULT_JVM_OPTS='"-Xmx64m" "-Xms64m"'
+DEFAULT_JVM_OPTS=""
 
-# Use the maximum available byte code version of Gradle
-# Attempting to set options based on JVM version
-# Resolving JDK location
 if [ -n "$JAVA_HOME" ] ; then
     if [ -x "$JAVA_HOME/sh/java" ] ; then
-        # IBM's JDK on AIX uses canonical name $JAVA_HOME/sh/java
         JAVACMD="$JAVA_HOME/sh/java"
     else
         JAVACMD="$JAVA_HOME/bin/java"
     fi
-    if [ ! -x "$JAVACMD" ] ; then
-        die "ERROR: JAVA_HOME is set to an invalid directory: $JAVA_HOME
-
-Please set the JAVA_HOME variable in your environment to match the
-location of your Java installation."
-    fi
 else
     JAVACMD="java"
-    which java >/dev/null 2>&1 || die "ERROR: JAVA_HOME is not set and no 'java' command could be found in your PATH.
-
-Please set the JAVA_HOME variable in your environment to match the
-location of your Java installation."
 fi
 
-# Find the wrapper jar
 CLASSPATH=$APP_HOME/gradle/wrapper/gradle-wrapper.jar
 
-# Execute Gradle
-exec "$JAVACMD" $DEFAULT_JVM_OPTS $JAVA_OPTS $GRADLE_OPTS "-Dorg.gradle.appname=$APP_BASE_NAME" -classpath "$CLASSPATH" org.gradle.wrapper.GradleWrapperMain "$@"
+# Check if wrapper jar exists, else fallback to system gradle
+if [ -f "$CLASSPATH" ]; then
+    exec "$JAVACMD" $DEFAULT_JVM_OPTS $JAVA_OPTS $GRADLE_OPTS "-Dorg.gradle.appname=$APP_BASE_NAME" -classpath "$CLASSPATH" org.gradle.wrapper.GradleWrapperMain "$@"
+else
+    exec gradle "$@"
+fi
