@@ -19,25 +19,25 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Palette
-import androidx.compose.material.icons.filled.PrivacyTip
+import androidx.compose.material.icons.filled.ColorLens
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.DeleteSweep
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material.icons.filled.MotionPhotosOn
+import androidx.compose.material.icons.filled.PhoneAndroid
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -52,15 +52,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.data.model.AppColorTheme
 import com.example.data.model.AppThemeMode
 import com.example.ui.components.SectionHeader
 import com.example.ui.viewmodel.RandomlyViewModel
-import com.example.util.RandomGenerators.DiceType
+import com.example.util.HapticFeedbackUtil
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,18 +68,16 @@ fun SettingsScreen(
     viewModel: RandomlyViewModel,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     val settings by viewModel.settings.collectAsState()
     var showClearHistoryDialog by remember { mutableStateOf(false) }
-
-    var minRangeInput by remember { mutableStateOf(settings.defaultMinNumber.toString()) }
-    var maxRangeInput by remember { mutableStateOf(settings.defaultMaxNumber.toString()) }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Text(
-                        text = "Settings",
+                        text = "Settings & Appearance",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
@@ -94,9 +92,10 @@ fun SettingsScreen(
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Appearance & Themes Section
+            // Theme Mode
             item {
-                SectionHeader(title = "Appearance & Color Themes")
+                SectionHeader(title = "App Theme Mode")
+                Spacer(modifier = Modifier.height(6.dp))
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(20.dp),
@@ -104,202 +103,122 @@ fun SettingsScreen(
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(
-                            text = "Theme Mode (Instant Switch)",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Medium
+                            text = "Choose how Randomly looks on your screen. Tapping applies changes immediately.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        Spacer(modifier = Modifier.height(10.dp))
-
-                        val options = listOf(
-                            AppThemeMode.SYSTEM to "System",
-                            AppThemeMode.LIGHT to "Light",
-                            AppThemeMode.DARK to "Dark"
-                        )
-                        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                            options.forEachIndexed { index, (mode, label) ->
-                                SegmentedButton(
-                                    selected = settings.themeMode == mode,
-                                    onClick = { viewModel.updateThemeMode(mode) },
-                                    shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size)
-                                ) {
-                                    Text(label)
-                                }
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(20.dp))
-
-                        Text(
-                            text = "App Accent Color Theme",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Medium
-                        )
-                        Spacer(modifier = Modifier.height(10.dp))
-
-                        LazyRow(
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            items(AppColorTheme.entries) { colorTheme ->
-                                val isSelected = settings.colorTheme == colorTheme
-                                Card(
-                                    modifier = Modifier
-                                        .clickable { viewModel.updateColorTheme(colorTheme) }
-                                        .border(
-                                            width = if (isSelected) 2.5.dp else 1.dp,
-                                            color = if (isSelected) colorTheme.primaryColor else MaterialTheme.colorScheme.outlineVariant,
-                                            shape = RoundedCornerShape(14.dp)
-                                        ),
-                                    shape = RoundedCornerShape(14.dp),
-                                    colors = CardDefaults.cardColors(
-                                        containerColor = if (isSelected) colorTheme.primaryColor.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
-                                    )
-                                ) {
-                                    Row(
-                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(22.dp)
-                                                .clip(CircleShape)
-                                                .background(colorTheme.primaryColor),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            if (isSelected) {
-                                                Icon(
-                                                    imageVector = Icons.Default.Check,
-                                                    contentDescription = null,
-                                                    tint = Color.White,
-                                                    modifier = Modifier.size(14.dp)
-                                                )
-                                            }
-                                        }
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Text(
-                                            text = colorTheme.displayName,
-                                            style = MaterialTheme.typography.labelLarge,
-                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Experience & Feedback Section
-            item {
-                SectionHeader(title = "Experience & Controls")
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
+                        Spacer(modifier = Modifier.height(14.dp))
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text("Haptic Feedback", style = MaterialTheme.typography.bodyLarge)
-                                Text("Vibrate on generation & selections", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
-                            Switch(
-                                checked = settings.hapticsEnabled,
-                                onCheckedChange = { viewModel.updateHapticsEnabled(it) }
+                            val modes = listOf(
+                                Triple(AppThemeMode.SYSTEM, "System", Icons.Default.PhoneAndroid),
+                                Triple(AppThemeMode.LIGHT, "Light", Icons.Default.LightMode),
+                                Triple(AppThemeMode.DARK, "Dark", Icons.Default.DarkMode)
                             )
-                        }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text("Animations & Visual Physics", style = MaterialTheme.typography.bodyLarge)
-                                Text("Smooth wheel spins, dice rolls & flips", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
-                            Switch(
-                                checked = settings.animationsEnabled,
-                                onCheckedChange = { viewModel.updateAnimationsEnabled(it) }
-                            )
-                        }
-                    }
-                }
-            }
-
-            // Tool Defaults Section
-            item {
-                SectionHeader(title = "Tool Defaults")
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text("Default Dice Type", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            items(DiceType.entries) { dice ->
+                            modes.forEach { (mode, label, icon) ->
+                                val selected = settings.themeMode == mode
                                 FilterChip(
-                                    selected = settings.defaultDiceType == dice.label,
-                                    onClick = { viewModel.updateDefaultDiceType(dice.label) },
-                                    label = { Text(dice.label) }
+                                    selected = selected,
+                                    onClick = {
+                                        HapticFeedbackUtil.performImpact(context, settings.hapticsEnabled)
+                                        viewModel.setThemeMode(mode)
+                                    },
+                                    label = { Text(label) },
+                                    leadingIcon = {
+                                        Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp))
+                                    },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .testTag("theme_mode_${mode.name.lowercase()}")
                                 )
                             }
                         }
+                    }
+                }
+            }
 
-                        Spacer(modifier = Modifier.height(16.dp))
+            // Accent Color Theme
+            item {
+                SectionHeader(title = "Accent Color Theme")
+                Spacer(modifier = Modifier.height(6.dp))
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Default.ColorLens,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Current: ${settings.colorTheme.displayName}",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
 
-                        Text("Default Number Range", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        LazyRow(
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            OutlinedTextField(
-                                value = minRangeInput,
-                                onValueChange = {
-                                    minRangeInput = it
-                                    val min = it.toIntOrNull()
-                                    val max = maxRangeInput.toIntOrNull()
-                                    if (min != null && max != null && min <= max) {
-                                        viewModel.updateDefaultNumberRange(min, max)
+                            items(AppColorTheme.entries) { theme ->
+                                val isSelected = settings.colorTheme == theme
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    modifier = Modifier
+                                        .clickable {
+                                            HapticFeedbackUtil.performImpact(context, settings.hapticsEnabled)
+                                            viewModel.setColorTheme(theme)
+                                        }
+                                        .padding(4.dp)
+                                        .testTag("color_theme_${theme.name.lowercase()}")
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(52.dp)
+                                            .clip(CircleShape)
+                                            .background(theme.primaryColor)
+                                            .border(
+                                                width = if (isSelected) 3.dp else 1.dp,
+                                                color = if (isSelected) MaterialTheme.colorScheme.onSurface else Color.Transparent,
+                                                shape = CircleShape
+                                            ),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        if (isSelected) {
+                                            Icon(
+                                                Icons.Default.Check,
+                                                contentDescription = "Selected",
+                                                tint = Color.White,
+                                                modifier = Modifier.size(24.dp)
+                                            )
+                                        }
                                     }
-                                },
-                                label = { Text("Min") },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                modifier = Modifier.weight(1f),
-                                singleLine = true
-                            )
-                            OutlinedTextField(
-                                value = maxRangeInput,
-                                onValueChange = {
-                                    maxRangeInput = it
-                                    val min = minRangeInput.toIntOrNull()
-                                    val max = it.toIntOrNull()
-                                    if (min != null && max != null && min <= max) {
-                                        viewModel.updateDefaultNumberRange(min, max)
-                                    }
-                                },
-                                label = { Text("Max") },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                modifier = Modifier.weight(1f),
-                                singleLine = true
-                            )
+                                    Spacer(modifier = Modifier.height(6.dp))
+                                    Text(
+                                        text = theme.displayName.split(" ").first(),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                    )
+                                }
+                            }
                         }
                     }
                 }
             }
 
-            // Privacy & Local Data
+            // Experience & Haptics
             item {
-                SectionHeader(title = "Privacy & Local Data")
+                SectionHeader(title = "Interactions & Feedback")
+                Spacer(modifier = Modifier.height(6.dp))
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(20.dp),
@@ -311,53 +230,120 @@ fun SettingsScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text("Save Generation History", style = MaterialTheme.typography.bodyLarge)
-                                Text("Store recent rolls and results locally", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                                Icon(Icons.Default.Vibration, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column {
+                                    Text("Haptic Vibrations", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                                    Text("Vibrate on spins, dice rolls and clicks", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            }
+                            Switch(
+                                checked = settings.hapticsEnabled,
+                                onCheckedChange = { viewModel.setHapticsEnabled(it) },
+                                modifier = Modifier.testTag("switch_haptics")
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                                Icon(Icons.Default.MotionPhotosOn, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column {
+                                    Text("App Animations", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                                    Text("Startup splash, spinning wheel, and rolling dice", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            }
+                            Switch(
+                                checked = settings.animationsEnabled,
+                                onCheckedChange = { viewModel.setAnimationsEnabled(it) },
+                                modifier = Modifier.testTag("switch_animations")
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                                Icon(Icons.Default.Settings, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column {
+                                    Text("Save Generation History", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                                    Text("Log tool outputs locally on device", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
                             }
                             Switch(
                                 checked = settings.saveHistoryEnabled,
-                                onCheckedChange = { viewModel.updateSaveHistoryEnabled(it) }
+                                onCheckedChange = { viewModel.setSaveHistoryEnabled(it) },
+                                modifier = Modifier.testTag("switch_save_history")
                             )
-                        }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        Button(
-                            onClick = { showClearHistoryDialog = true },
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.errorContainer, contentColor = MaterialTheme.colorScheme.onErrorContainer),
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Text("Clear Generation History")
                         }
                     }
                 }
             }
 
-            // Privacy Card
+            // Data & Storage Management
+            item {
+                SectionHeader(title = "Device Storage & Data")
+                Spacer(modifier = Modifier.height(6.dp))
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = "All your custom presets, favorite tools, usage counts, and preferences are automatically saved into local device storage using Room and DataStore.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        TextButton(
+                            onClick = { showClearHistoryDialog = true },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Default.DeleteSweep, contentDescription = null, tint = MaterialTheme.colorScheme.error)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Clear All Generated History", color = MaterialTheme.colorScheme.error)
+                        }
+                    }
+                }
+            }
+
+            // About & Version
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f))
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
                 ) {
-                    Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.Top) {
-                        Icon(Icons.Default.PrivacyTip, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
-                            Text("100% Offline & Private", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                            Text(
-                                "Randomly runs completely on-device. All custom presets, settings, and tool counts remain securely stored in your device's local database.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            Text("Randomly Toolbox", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            Text("Version 1.0 • Offline & Secure Randomness Engine", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
             }
 
-            item { Spacer(modifier = Modifier.height(24.dp)) }
+            item { Spacer(modifier = Modifier.height(32.dp)) }
         }
     }
 
@@ -365,13 +351,15 @@ fun SettingsScreen(
         AlertDialog(
             onDismissRequest = { showClearHistoryDialog = false },
             title = { Text("Clear All History?") },
-            text = { Text("Are you sure you want to permanently delete all history records from this device?") },
+            text = { Text("This will permanently remove all stored random records from your local storage.") },
             confirmButton = {
-                TextButton(onClick = {
-                    viewModel.clearAllHistory()
-                    showClearHistoryDialog = false
-                }) {
-                    Text("Delete All", color = MaterialTheme.colorScheme.error)
+                TextButton(
+                    onClick = {
+                        viewModel.clearAllHistory()
+                        showClearHistoryDialog = false
+                    }
+                ) {
+                    Text("Clear All", color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {

@@ -1,15 +1,20 @@
 package com.example.ui.screens.tools
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -20,8 +25,9 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.FormatListBulleted
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.AlertDialog
@@ -31,9 +37,11 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
@@ -41,9 +49,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -53,6 +61,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.data.model.ToolPreset
 import com.example.data.model.ToolType
@@ -60,8 +69,10 @@ import com.example.ui.components.ResultDisplayCard
 import com.example.ui.theme.AmberAccent
 import com.example.ui.viewmodel.RandomlyViewModel
 import com.example.util.HapticFeedbackUtil
-import com.example.util.RandomGenerators
 import com.example.util.ShareUtil
+import java.security.SecureRandom
+
+private const val MAX_ITEM_LENGTH = 25
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -75,47 +86,69 @@ fun ListPickerScreen(
 
     val dbPresets by viewModel.getPresetsForTool(ToolType.LIST_PICKER.id).collectAsState(initial = emptyList())
 
-    val items = remember {
-        mutableStateListOf("Pizza", "Burger", "Pasta", "Sandwich", "Sushi", "Tacos")
+    val defaultItems = remember { listOf("Action", "Comedy", "Sci-Fi", "Horror", "Drama", "Animation") }
+    val items = remember { mutableStateListOf<String>().apply { addAll(defaultItems) } }
+    var hasLoadedLastUsed by remember { mutableStateOf(false) }
+
+    // Load persisted items
+    LaunchedEffect(Unit) {
+        viewModel.getLastUsedItems(ToolType.LIST_PICKER.id, defaultItems).collect { saved ->
+            if (!hasLoadedLastUsed && saved.isNotEmpty()) {
+                items.clear()
+                items.addAll(saved)
+                hasLoadedLastUsed = true
+            }
+        }
     }
 
-    var newItemText by remember { mutableStateOf("") }
-    var pickCount by remember { mutableIntStateOf(1) }
-    var allowDuplicates by remember { mutableStateOf(false) }
-    var removePickedAfterSelection by remember { mutableStateOf(false) }
+    fun persistCurrentItems() {
+        viewModel.saveLastUsedItems(ToolType.LIST_PICKER.id, items.toList())
+    }
 
+    var newItemInput by remember { mutableStateOf("") }
+    var pickCountInput by remember { mutableStateOf("1") }
+    var allowDuplicates by remember { mutableStateOf(false) }
     var pickedResults by remember { mutableStateOf<List<String>>(emptyList()) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
 
     var showSavePresetDialog by remember { mutableStateOf(false) }
     var newPresetNameInput by remember { mutableStateOf("") }
     var presetToDelete by remember { mutableStateOf<ToolPreset?>(null) }
-    var showPasteDialog by remember { mutableStateOf(false) }
-    var pasteText by remember { mutableStateOf("") }
 
-    fun pick() {
-        errorMessage = null
-        val result = RandomGenerators.pickFromList(items, pickCount, allowDuplicates)
-        result.fold(
-            onSuccess = { picked ->
-                pickedResults = picked
-                HapticFeedbackUtil.performSuccess(context, settings.hapticsEnabled)
-                val resultText = picked.joinToString(", ")
-                viewModel.recordResult(
-                    toolType = ToolType.LIST_PICKER,
-                    title = "List Picker",
-                    result = resultText,
-                    details = "Picked $pickCount from ${items.size} items"
-                )
+    fun pickItems() {
+        if (items.isEmpty()) return
+        HapticFeedbackUtil.performImpact(context, settings.hapticsEnabled)
 
-                if (removePickedAfterSelection) {
-                    picked.forEach { items.remove(it) }
-                }
-            },
-            onFailure = { ex ->
-                errorMessage = ex.message ?: "Invalid selection"
-            }
+        val count = pickCountInput.toIntOrNull()?.coerceAtLeast(1) ?: 1
+        val random = SecureRandom()
+
+        val results = if (allowDuplicates) {
+            List(count) { items[random.nextInt(items.size)] }
+        } else {
+            val shuffled = items.shuffled(random)
+            shuffled.take(count.coerceAtMost(items.size))
+        }
+
+        pickedResults = results
+        val resultStr = results.joinToString(", ")
+
+        HapticFeedbackUtil.performSuccess(context, settings.hapticsEnabled)
+
+        viewModel.recordResult(
+            toolType = ToolType.LIST_PICKER,
+            title = "List Picker",
+            result = resultStr,
+            details = "Picked $count out of ${items.size} items"
         )
+    }
+
+    fun shuffleList() {
+        if (items.isEmpty()) return
+        HapticFeedbackUtil.performImpact(context, settings.hapticsEnabled)
+        val random = SecureRandom()
+        items.shuffle(random)
+        pickedResults = items.toList()
+        persistCurrentItems()
+        viewModel.showMessage("List shuffled completely")
     }
 
     Scaffold(
@@ -144,74 +177,157 @@ fun ListPickerScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
                 .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            contentPadding = PaddingValues(vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Result Display
             if (pickedResults.isNotEmpty()) {
                 item {
-                    val resultDisplay = pickedResults.joinToString(", ")
-                    ResultDisplayCard(
-                        resultText = resultDisplay,
-                        detailsText = "Selected $pickCount item${if (pickCount > 1) "s" else ""} from list",
-                        accentColor = ToolType.LIST_PICKER.accentColor,
-                        onCopy = {
-                            ShareUtil.copyToClipboard(context, resultDisplay)
-                            viewModel.showMessage("Copied '$resultDisplay' to clipboard")
-                        },
-                        onShare = {
-                            ShareUtil.shareText(context, "List Picked Result", resultDisplay)
-                        },
-                        onRegenerate = { pick() }
-                    )
-                }
-            }
-
-            // Presets selector bar
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("Saved & Ready Presets", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    TextButton(onClick = { showSavePresetDialog = true }) {
-                        Icon(Icons.Default.Save, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Save as Preset")
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(6.dp))
-
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(dbPresets) { preset ->
-                        FilterChip(
-                            selected = false,
-                            onClick = {
-                                items.clear()
-                                items.addAll(preset.getItems())
-                                viewModel.showMessage("Loaded preset: ${preset.presetName}")
+                    val display = pickedResults.joinToString(", ")
+                    Box(modifier = Modifier.fillMaxWidth().widthIn(max = 520.dp)) {
+                        ResultDisplayCard(
+                            resultText = display,
+                            detailsText = "Selected from your list of ${items.size} items",
+                            accentColor = ToolType.LIST_PICKER.accentColor,
+                            onCopy = {
+                                ShareUtil.copyToClipboard(context, display)
+                                viewModel.showMessage("Copied '$display' to clipboard")
                             },
-                            label = { Text("${preset.presetName} (${preset.getItems().size})") },
-                            trailingIcon = {
-                                IconButton(
-                                    onClick = { presetToDelete = preset },
-                                    modifier = Modifier.size(18.dp)
-                                ) {
-                                    Icon(Icons.Default.Clear, contentDescription = "Delete preset", tint = MaterialTheme.colorScheme.error)
-                                }
-                            }
+                            onShare = {
+                                ShareUtil.shareText(context, "List Picker Result", display)
+                            },
+                            onRegenerate = { pickItems() }
                         )
                     }
                 }
             }
 
-            // Controls Card
+            // Action Buttons
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .widthIn(max = 520.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Button(
+                        onClick = { pickItems() },
+                        enabled = items.isNotEmpty(),
+                        modifier = Modifier
+                            .weight(1.3f)
+                            .heightIn(min = 48.dp, max = 52.dp)
+                            .testTag("pick_items_button"),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = ToolType.LIST_PICKER.accentColor)
+                    ) {
+                        Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(20.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            "Pick Random",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+
+                    OutlinedButton(
+                        onClick = { shuffleList() },
+                        enabled = items.isNotEmpty(),
+                        modifier = Modifier
+                            .weight(0.9f)
+                            .heightIn(min = 48.dp, max = 52.dp),
+                        shape = RoundedCornerShape(14.dp)
+                    ) {
+                        Icon(Icons.Default.Shuffle, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            "Shuffle",
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+            }
+
+            // Presets Header & Saved Presets Row (Max 3 built-in)
+            item {
+                Column(modifier = Modifier.fillMaxWidth().widthIn(max = 520.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "Ready Presets",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        TextButton(onClick = { showSavePresetDialog = true }) {
+                            Icon(Icons.Default.Save, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Save Preset", style = MaterialTheme.typography.labelMedium)
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        items(dbPresets) { preset ->
+                            val isPresetActive = items.toList() == preset.getItems()
+                            FilterChip(
+                                selected = isPresetActive,
+                                onClick = {
+                                    items.clear()
+                                    items.addAll(preset.getItems())
+                                    pickedResults = emptyList()
+                                    persistCurrentItems()
+                                    viewModel.showMessage("Loaded: ${preset.presetName}")
+                                },
+                                label = {
+                                    Text(
+                                        preset.presetName,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = ToolType.LIST_PICKER.accentColor.copy(alpha = 0.2f),
+                                    selectedLabelColor = ToolType.LIST_PICKER.accentColor
+                                ),
+                                trailingIcon = if (!preset.isBuiltIn) {
+                                    {
+                                        IconButton(
+                                            onClick = { presetToDelete = preset },
+                                            modifier = Modifier.size(18.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Clear,
+                                                contentDescription = "Delete preset",
+                                                tint = MaterialTheme.colorScheme.error
+                                            )
+                                        }
+                                    }
+                                } else null
+                            )
+                        }
+                    }
+                }
+            }
+
+            // List Options & Add Item Card
             item {
                 Card(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .widthIn(max = 520.dp),
                     shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(
@@ -219,32 +335,48 @@ fun ListPickerScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("List Items (${items.size})", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                            TextButton(onClick = { showPasteDialog = true }) {
-                                Text("Paste Multiline")
+                            Text(
+                                "List Items (${items.size})",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            if (items.isNotEmpty()) {
+                                TextButton(onClick = {
+                                    items.clear()
+                                    persistCurrentItems()
+                                }) {
+                                    Text("Clear All", color = MaterialTheme.colorScheme.error)
+                                }
                             }
                         }
 
                         Spacer(modifier = Modifier.height(8.dp))
 
-                        // Add item
+                        // Add Entry Field with Character Limit (25 letters)
                         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                             OutlinedTextField(
-                                value = newItemText,
-                                onValueChange = { newItemText = it },
-                                label = { Text("Add item") },
+                                value = newItemInput,
+                                onValueChange = {
+                                    if (it.length <= MAX_ITEM_LENGTH) {
+                                        newItemInput = it
+                                    }
+                                },
+                                label = { Text("Add item (${newItemInput.length}/$MAX_ITEM_LENGTH)") },
                                 modifier = Modifier.weight(1f).testTag("input_list_item"),
-                                singleLine = true
+                                singleLine = true,
+                                maxLines = 1
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Button(
                                 onClick = {
-                                    if (newItemText.isNotBlank()) {
-                                        items.add(newItemText.trim())
-                                        newItemText = ""
+                                    if (newItemInput.isNotBlank()) {
+                                        items.add(newItemInput.trim())
+                                        newItemInput = ""
+                                        persistCurrentItems()
                                     }
                                 },
-                                shape = RoundedCornerShape(12.dp)
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier.heightIn(min = 48.dp, max = 52.dp)
                             ) {
                                 Icon(Icons.Default.Add, contentDescription = "Add")
                             }
@@ -252,72 +384,38 @@ fun ListPickerScreen(
 
                         Spacer(modifier = Modifier.height(14.dp))
 
-                        // Pick Count selector
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text("Pick Count", style = MaterialTheme.typography.bodyMedium)
-                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                listOf(1, 2, 3, 5).forEach { count ->
-                                    FilterChip(
-                                        selected = pickCount == count,
-                                        onClick = { pickCount = count },
-                                        label = { Text("$count") }
-                                    )
-                                }
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
-                                Text("Remove Picked Item", style = MaterialTheme.typography.bodyMedium)
-                                Text("Removes selected item from the list", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text("Allow Duplicates", style = MaterialTheme.typography.bodyMedium)
+                                Text(
+                                    "Can pick the same item multiple times",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                             }
                             Switch(
-                                checked = removePickedAfterSelection,
-                                onCheckedChange = { removePickedAfterSelection = it }
+                                checked = allowDuplicates,
+                                onCheckedChange = { allowDuplicates = it }
                             )
-                        }
-
-                        if (errorMessage != null) {
-                            Spacer(modifier = Modifier.height(10.dp))
-                            Text("❌ $errorMessage", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
-                        }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        Button(
-                            onClick = { pick() },
-                            enabled = items.isNotEmpty(),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(52.dp)
-                                .testTag("pick_from_list_button"),
-                            shape = RoundedCornerShape(14.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = ToolType.LIST_PICKER.accentColor)
-                        ) {
-                            Icon(Icons.Default.FormatListBulleted, contentDescription = null, modifier = Modifier.size(20.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("PICK FROM LIST", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
             }
 
-            // List items display
+            // Items List
             itemsIndexed(items) { index, item ->
                 Card(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .widthIn(max = 520.dp),
                     shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+                    )
                 ) {
                     Row(
                         modifier = Modifier
@@ -330,10 +428,19 @@ fun ListPickerScreen(
                             text = "${index + 1}. $item",
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Medium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f)
                         )
-                        IconButton(onClick = { items.removeAt(index) }) {
-                            Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error.copy(alpha = 0.8f))
+                        IconButton(onClick = {
+                            items.removeAt(index)
+                            persistCurrentItems()
+                        }) {
+                            Icon(
+                                Icons.Default.Delete,
+                                contentDescription = "Delete",
+                                tint = MaterialTheme.colorScheme.error.copy(alpha = 0.8f)
+                            )
                         }
                     }
                 }
@@ -349,26 +456,32 @@ fun ListPickerScreen(
             onDismissRequest = { showSavePresetDialog = false },
             title = { Text("Save Custom Preset") },
             text = {
-                OutlinedTextField(
-                    value = newPresetNameInput,
-                    onValueChange = { newPresetNameInput = it },
-                    label = { Text("Preset Name") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Column {
+                    Text("Enter a name for this list preset:")
+                    Spacer(modifier = Modifier.height(10.dp))
+                    OutlinedTextField(
+                        value = newPresetNameInput,
+                        onValueChange = { if (it.length <= 30) newPresetNameInput = it },
+                        label = { Text("Preset Name (${newPresetNameInput.length}/30)") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             },
             confirmButton = {
-                Button(onClick = {
-                    if (newPresetNameInput.isNotBlank() && items.isNotEmpty()) {
-                        viewModel.savePreset(
-                            toolId = ToolType.LIST_PICKER.id,
-                            name = newPresetNameInput.trim(),
-                            items = items.toList()
-                        )
-                        newPresetNameInput = ""
-                        showSavePresetDialog = false
+                Button(
+                    onClick = {
+                        if (newPresetNameInput.isNotBlank() && items.isNotEmpty()) {
+                            viewModel.savePreset(
+                                toolId = ToolType.LIST_PICKER.id,
+                                name = newPresetNameInput.trim(),
+                                items = items.toList()
+                            )
+                            newPresetNameInput = ""
+                            showSavePresetDialog = false
+                        }
                     }
-                }) {
+                ) {
                     Text("Save Preset")
                 }
             },
@@ -383,54 +496,19 @@ fun ListPickerScreen(
         AlertDialog(
             onDismissRequest = { presetToDelete = null },
             title = { Text("Delete Preset?") },
-            text = { Text("Are you sure you want to delete '${preset.presetName}'?") },
+            text = { Text("Are you sure you want to delete the preset '${preset.presetName}'?") },
             confirmButton = {
-                TextButton(onClick = {
-                    viewModel.deletePreset(preset.id)
-                    presetToDelete = null
-                }) {
+                TextButton(
+                    onClick = {
+                        viewModel.deletePreset(preset.id)
+                        presetToDelete = null
+                    }
+                ) {
                     Text("Delete", color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { presetToDelete = null }) { Text("Cancel") }
-            }
-        )
-    }
-
-    // Paste Multiline Items Dialog
-    if (showPasteDialog) {
-        AlertDialog(
-            onDismissRequest = { showPasteDialog = false },
-            title = { Text("Paste Multiple Items") },
-            text = {
-                Column {
-                    Text("Enter one item per line:", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value = pasteText,
-                        onValueChange = { pasteText = it },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(150.dp),
-                        placeholder = { Text("Pizza\nBurger\nPasta\nSushi") }
-                    )
-                }
-            },
-            confirmButton = {
-                Button(onClick = {
-                    val lines = pasteText.lines().map { it.trim() }.filter { it.isNotEmpty() }
-                    if (lines.isNotEmpty()) {
-                        items.addAll(lines)
-                        pasteText = ""
-                        showPasteDialog = false
-                    }
-                }) {
-                    Text("Add All")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showPasteDialog = false }) { Text("Cancel") }
             }
         )
     }

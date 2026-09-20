@@ -18,82 +18,102 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(na
 
 class DataStoreManager(private val context: Context) {
 
-    private val KEY_THEME = stringPreferencesKey("theme_mode")
-    private val KEY_COLOR_THEME = stringPreferencesKey("color_theme")
-    private val KEY_HAPTICS = booleanPreferencesKey("haptics_enabled")
-    private val KEY_ANIMATIONS = booleanPreferencesKey("animations_enabled")
-    private val KEY_SAVE_HISTORY = booleanPreferencesKey("save_history_enabled")
-    private val KEY_DEFAULT_MIN = intPreferencesKey("default_min_number")
-    private val KEY_DEFAULT_MAX = intPreferencesKey("default_max_number")
-    private val KEY_DEFAULT_DICE = stringPreferencesKey("default_dice_type")
+    companion object {
+        val THEME_MODE = stringPreferencesKey("theme_mode")
+        val COLOR_THEME = stringPreferencesKey("color_theme")
+        val HAPTICS_ENABLED = booleanPreferencesKey("haptics_enabled")
+        val ANIMATIONS_ENABLED = booleanPreferencesKey("animations_enabled")
+        val SAVE_HISTORY_ENABLED = booleanPreferencesKey("save_history_enabled")
+        val DEFAULT_MIN_NUMBER = intPreferencesKey("default_min_number")
+        val DEFAULT_MAX_NUMBER = intPreferencesKey("default_max_number")
+        val DEFAULT_DICE_TYPE = stringPreferencesKey("default_dice_type")
+    }
 
     val settingsFlow: Flow<AppSettings> = context.dataStore.data.map { preferences ->
-        val themeStr = preferences[KEY_THEME] ?: AppThemeMode.SYSTEM.name
+        val themeModeStr = preferences[THEME_MODE] ?: AppThemeMode.SYSTEM.name
         val themeMode = try {
-            AppThemeMode.valueOf(themeStr)
-        } catch (_: Exception) {
+            AppThemeMode.valueOf(themeModeStr)
+        } catch (e: Exception) {
             AppThemeMode.SYSTEM
         }
 
-        val colorThemeStr = preferences[KEY_COLOR_THEME] ?: AppColorTheme.INDIGO.name
+        val colorThemeStr = preferences[COLOR_THEME] ?: AppColorTheme.INDIGO.name
         val colorTheme = try {
             AppColorTheme.valueOf(colorThemeStr)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
             AppColorTheme.INDIGO
         }
 
         AppSettings(
             themeMode = themeMode,
             colorTheme = colorTheme,
-            hapticsEnabled = preferences[KEY_HAPTICS] ?: true,
-            animationsEnabled = preferences[KEY_ANIMATIONS] ?: true,
-            saveHistoryEnabled = preferences[KEY_SAVE_HISTORY] ?: true,
-            defaultMinNumber = preferences[KEY_DEFAULT_MIN] ?: 1,
-            defaultMaxNumber = preferences[KEY_DEFAULT_MAX] ?: 100,
-            defaultDiceType = preferences[KEY_DEFAULT_DICE] ?: "d6"
+            hapticsEnabled = preferences[HAPTICS_ENABLED] ?: true,
+            animationsEnabled = preferences[ANIMATIONS_ENABLED] ?: true,
+            saveHistoryEnabled = preferences[SAVE_HISTORY_ENABLED] ?: true,
+            defaultMinNumber = preferences[DEFAULT_MIN_NUMBER] ?: 1,
+            defaultMaxNumber = preferences[DEFAULT_MAX_NUMBER] ?: 100,
+            defaultDiceType = preferences[DEFAULT_DICE_TYPE] ?: "d6"
         )
     }
 
     suspend fun setThemeMode(mode: AppThemeMode) {
         context.dataStore.edit { preferences ->
-            preferences[KEY_THEME] = mode.name
+            preferences[THEME_MODE] = mode.name
         }
     }
 
     suspend fun setColorTheme(colorTheme: AppColorTheme) {
         context.dataStore.edit { preferences ->
-            preferences[KEY_COLOR_THEME] = colorTheme.name
+            preferences[COLOR_THEME] = colorTheme.name
         }
     }
 
     suspend fun setHapticsEnabled(enabled: Boolean) {
         context.dataStore.edit { preferences ->
-            preferences[KEY_HAPTICS] = enabled
+            preferences[HAPTICS_ENABLED] = enabled
         }
     }
 
     suspend fun setAnimationsEnabled(enabled: Boolean) {
         context.dataStore.edit { preferences ->
-            preferences[KEY_ANIMATIONS] = enabled
+            preferences[ANIMATIONS_ENABLED] = enabled
         }
     }
 
     suspend fun setSaveHistoryEnabled(enabled: Boolean) {
         context.dataStore.edit { preferences ->
-            preferences[KEY_SAVE_HISTORY] = enabled
+            preferences[SAVE_HISTORY_ENABLED] = enabled
         }
     }
 
     suspend fun setDefaultNumberRange(min: Int, max: Int) {
         context.dataStore.edit { preferences ->
-            preferences[KEY_DEFAULT_MIN] = min
-            preferences[KEY_DEFAULT_MAX] = max
+            preferences[DEFAULT_MIN_NUMBER] = min
+            preferences[DEFAULT_MAX_NUMBER] = max
         }
     }
 
     suspend fun setDefaultDiceType(diceType: String) {
         context.dataStore.edit { preferences ->
-            preferences[KEY_DEFAULT_DICE] = diceType
+            preferences[DEFAULT_DICE_TYPE] = diceType
+        }
+    }
+
+    fun getLastUsedItemsFlow(toolId: String, defaultItems: List<String>): Flow<List<String>> =
+        context.dataStore.data.map { preferences ->
+            val key = stringPreferencesKey("last_used_tool_items_$toolId")
+            val raw = preferences[key]
+            if (!raw.isNullOrBlank()) {
+                raw.split("|||").filter { it.isNotBlank() }
+            } else {
+                defaultItems
+            }
+        }
+
+    suspend fun saveLastUsedItems(toolId: String, items: List<String>) {
+        val key = stringPreferencesKey("last_used_tool_items_$toolId")
+        context.dataStore.edit { preferences ->
+            preferences[key] = items.joinToString("|||")
         }
     }
 }

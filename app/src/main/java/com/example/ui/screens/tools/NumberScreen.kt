@@ -2,15 +2,18 @@ package com.example.ui.screens.tools
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -77,8 +80,10 @@ fun NumberScreen(
     var results by remember { mutableStateOf<List<Int>>(emptyList()) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    val recentHistory by viewModel.getHistoryForTool(ToolType.NUMBER.id, 5)
-        .collectAsState(initial = emptyList())
+    val allHistory by viewModel.history.collectAsState()
+    val recentHistory = remember(allHistory) {
+        allHistory.filter { it.toolType == ToolType.NUMBER.id }.take(5)
+    }
 
     fun generate() {
         errorMessage = null
@@ -151,30 +156,35 @@ fun NumberScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
                 .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             item {
                 if (results.isNotEmpty()) {
                     val resultDisplay = if (results.size == 1) "${results.first()}" else results.joinToString(", ")
-                    ResultDisplayCard(
-                        resultText = resultDisplay,
-                        detailsText = "Range: $minInput → $maxInput (${results.size} number${if (results.size > 1) "s" else ""})",
-                        accentColor = ToolType.NUMBER.accentColor,
-                        onCopy = {
-                            ShareUtil.copyToClipboard(context, resultDisplay)
-                            viewModel.showMessage("Copied $resultDisplay to clipboard")
-                        },
-                        onShare = {
-                            ShareUtil.shareText(context, "Random Number Result", resultDisplay)
-                        },
-                        onRegenerate = { generate() }
-                    )
+                    Box(modifier = Modifier.fillMaxWidth().widthIn(max = 520.dp)) {
+                        ResultDisplayCard(
+                            resultText = resultDisplay,
+                            detailsText = "Range: $minInput → $maxInput (${results.size} number${if (results.size > 1) "s" else ""})",
+                            accentColor = ToolType.NUMBER.accentColor,
+                            onCopy = {
+                                ShareUtil.copyToClipboard(context, resultDisplay)
+                                viewModel.showMessage("Copied $resultDisplay to clipboard")
+                            },
+                            onShare = {
+                                ShareUtil.shareText(context, "Random Number Result", resultDisplay)
+                            },
+                            onRegenerate = { generate() }
+                        )
+                    }
                 }
             }
 
             item {
                 Card(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .widthIn(max = 520.dp),
                     shape = RoundedCornerShape(20.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                 ) {
@@ -271,13 +281,18 @@ fun NumberScreen(
                             onClick = { generate() },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(52.dp)
+                                .heightIn(min = 48.dp, max = 52.dp)
                                 .testTag("generate_number_button"),
                             shape = RoundedCornerShape(14.dp)
                         ) {
                             Icon(Icons.Default.Casino, contentDescription = null, modifier = Modifier.size(20.dp))
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Generate Numbers", style = MaterialTheme.typography.titleMedium)
+                            Text(
+                                "Generate Numbers",
+                                style = MaterialTheme.typography.titleMedium,
+                                maxLines = 1,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                            )
                         }
                     }
                 }
@@ -285,11 +300,15 @@ fun NumberScreen(
 
             if (recentHistory.isNotEmpty()) {
                 item {
-                    SectionHeader(title = "Recent Numbers")
+                    Box(modifier = Modifier.fillMaxWidth().widthIn(max = 520.dp)) {
+                        SectionHeader(title = "Recent Numbers")
+                    }
                 }
                 items(recentHistory) { item ->
                     Card(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .widthIn(max = 520.dp),
                         shape = RoundedCornerShape(14.dp),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
                     ) {

@@ -135,4 +135,12 @@ class RandomlyRepository(
     suspend fun setDefaultDiceType(diceType: String) {
         dataStoreManager.setDefaultDiceType(diceType)
     }
+
+    fun getLastUsedItems(toolId: String, defaultItems: List<String>): Flow<List<String>> {
+        return dataStoreManager.getLastUsedItemsFlow(toolId, defaultItems)
+    }
+
+    suspend fun saveLastUsedItems(toolId: String, items: List<String>) {
+        dataStoreManager.saveLastUsedItems(toolId, items)
+    }
 }

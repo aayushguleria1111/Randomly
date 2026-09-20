@@ -29,7 +29,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             val settings by viewModel.settings.collectAsState()
-            var showSplash by remember { mutableStateOf(true) }
+            var showSplash by remember { mutableStateOf(!viewModel.hasShownSplash) }
 
             RandomlyTheme(
                 themeMode = settings.themeMode,
@@ -38,9 +38,12 @@ class MainActivity : ComponentActivity() {
                 Box(modifier = Modifier.fillMaxSize()) {
                     RandomlyNavGraph(viewModel = viewModel)
 
-                    if (showSplash) {
+                    if (showSplash && !viewModel.hasShownSplash) {
                         StartupAnimationOverlay(
-                            onSplashFinished = { showSplash = false }
+                            onSplashFinished = {
+                                viewModel.hasShownSplash = true
+                                showSplash = false
+                            }
                         )
                     }
                 }

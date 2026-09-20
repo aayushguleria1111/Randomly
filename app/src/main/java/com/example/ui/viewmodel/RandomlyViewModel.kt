@@ -1,6 +1,9 @@
 package com.example.ui.viewmodel
 
 import android.app.Application
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -31,65 +34,66 @@ class RandomlyViewModel(
     private val repository: RandomlyRepository
 ) : AndroidViewModel(application) {
 
-    val settings: StateFlow<AppSettings> = repository.settings
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.Eagerly,
-            initialValue = AppSettings()
-        )
+    var hasShownSplash: Boolean = false
 
-    val favorites: StateFlow<List<FavoriteItem>> = repository.allFavorites
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList()
-        )
+    val settings: StateFlow<AppSettings> = repository.settings.stateIn(
+        viewModelScope,
+        SharingStarted.Eagerly,
+        AppSettings()
+    )
 
-    val history: StateFlow<List<HistoryItem>> = repository.allHistory
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList()
-        )
+    val favorites: StateFlow<List<FavoriteItem>> = repository.allFavorites.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5000),
+        emptyList()
+    )
 
-    val savedLists: StateFlow<List<SavedList>> = repository.allSavedLists
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList()
-        )
+    val history: StateFlow<List<HistoryItem>> = repository.allHistory.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5000),
+        emptyList()
+    )
 
-    val mostUsedTools: StateFlow<List<ToolUsage>> = repository.mostUsedTools
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList()
-        )
+    val mostUsedTools: StateFlow<List<ToolUsage>> = repository.mostUsedTools.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5000),
+        emptyList()
+    )
+
+    val allSavedLists: StateFlow<List<SavedList>> = repository.allSavedLists.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5000),
+        emptyList()
+    )
 
     private val _snackbarMessage = MutableSharedFlow<String>()
     val snackbarMessage: SharedFlow<String> = _snackbarMessage.asSharedFlow()
 
-    fun getHistoryForTool(toolId: String, limit: Int = 5): Flow<List<HistoryItem>> {
-        return repository.getHistoryForTool(toolId, limit)
+    @Composable
+    fun isToolFavorite(toolId: String): Boolean {
+        val favs by favorites.collectAsState()
+        return favs.any { it.toolId == toolId }
     }
 
-    fun getPresetsForTool(toolId: String): Flow<List<ToolPreset>> {
-        return repository.getPresetsForTool(toolId)
+    fun isFavoriteSync(toolId: String): Boolean {
+        return favorites.value.any { it.toolId == toolId }
     }
 
-    fun recordToolOpen(toolId: String) {
+    fun toggleFavorite(tool: ToolType) {
         viewModelScope.launch {
-            repository.recordToolOpen(toolId)
+            val isFav = favorites.value.any { it.toolId == tool.id }
+            repository.toggleFavorite(tool.id, isFav)
+            val msg = if (isFav) "Removed ${tool.title} from favorites" else "Added ${tool.title} to favorites"
+            _snackbarMessage.emit(msg)
         }
     }
 
-    fun showMessage(message: String) {
-        viewModelScope.launch {
-            _snackbarMessage.emit(message)
-        }
-    }
-
-    fun recordResult(toolType: ToolType, title: String, result: String, details: String = "") {
+    fun recordResult(
+        toolType: ToolType,
+        title: String,
+        result: String,
+        details: String = ""
+    ) {
         viewModelScope.launch {
             repository.recordResult(
                 toolType = toolType.id,
@@ -100,23 +104,20 @@ class RandomlyViewModel(
         }
     }
 
-    fun toggleFavorite(toolType: ToolType) {
+    fun recordToolOpen(toolId: String) {
         viewModelScope.launch {
-            val isFav = favorites.value.any { it.toolId == toolType.id }
-            repository.toggleFavorite(toolType.id, isFav)
-            val msg = if (isFav) "Removed ${toolType.title} from favorites" else "Added ${toolType.title} to favorites"
-            _snackbarMessage.emit(msg)
+            repository.recordToolOpen(toolId)
         }
     }
 
-    fun isToolFavorite(toolId: String): Boolean {
-        return favorites.value.any { it.toolId == toolId }
+    fun getPresetsForTool(toolId: String): Flow<List<ToolPreset>> {
+        return repository.getPresetsForTool(toolId)
     }
 
     fun savePreset(toolId: String, name: String, items: List<String>) {
         viewModelScope.launch {
             repository.savePreset(toolId, name, items)
-            _snackbarMessage.emit("Preset '$name' saved!")
+            _snackbarMessage.emit("Preset '$name' saved")
         }
     }
 
@@ -130,7 +131,6 @@ class RandomlyViewModel(
     fun deleteHistoryItem(id: Long) {
         viewModelScope.launch {
             repository.deleteHistoryItem(id)
-            _snackbarMessage.emit("History item deleted")
         }
     }
 
@@ -141,59 +141,75 @@ class RandomlyViewModel(
         }
     }
 
-    fun saveCustomList(name: String, items: List<String>, id: Long = 0) {
+    fun saveList(name: String, items: List<String>, id: Long = 0) {
         viewModelScope.launch {
             repository.saveList(name, items, id)
-            _snackbarMessage.emit("List '$name' saved successfully")
+            _snackbarMessage.emit("List '$name' saved")
         }
     }
 
-    fun deleteCustomList(id: Long) {
+    fun deleteSavedList(id: Long) {
         viewModelScope.launch {
             repository.deleteSavedList(id)
             _snackbarMessage.emit("List deleted")
         }
     }
 
-    fun updateThemeMode(mode: AppThemeMode) {
+    fun setThemeMode(mode: AppThemeMode) {
         viewModelScope.launch {
             repository.setThemeMode(mode)
         }
     }
 
-    fun updateColorTheme(colorTheme: AppColorTheme) {
+    fun setColorTheme(colorTheme: AppColorTheme) {
         viewModelScope.launch {
             repository.setColorTheme(colorTheme)
         }
     }
 
-    fun updateHapticsEnabled(enabled: Boolean) {
+    fun setHapticsEnabled(enabled: Boolean) {
         viewModelScope.launch {
             repository.setHapticsEnabled(enabled)
         }
     }
 
-    fun updateAnimationsEnabled(enabled: Boolean) {
+    fun setAnimationsEnabled(enabled: Boolean) {
         viewModelScope.launch {
             repository.setAnimationsEnabled(enabled)
         }
     }
 
-    fun updateSaveHistoryEnabled(enabled: Boolean) {
+    fun setSaveHistoryEnabled(enabled: Boolean) {
         viewModelScope.launch {
             repository.setSaveHistoryEnabled(enabled)
         }
     }
 
-    fun updateDefaultNumberRange(min: Int, max: Int) {
+    fun setDefaultNumberRange(min: Int, max: Int) {
         viewModelScope.launch {
             repository.setDefaultNumberRange(min, max)
         }
     }
 
-    fun updateDefaultDiceType(diceType: String) {
+    fun setDefaultDiceType(diceType: String) {
         viewModelScope.launch {
             repository.setDefaultDiceType(diceType)
+        }
+    }
+
+    fun getLastUsedItems(toolId: String, defaultItems: List<String>): Flow<List<String>> {
+        return repository.getLastUsedItems(toolId, defaultItems)
+    }
+
+    fun saveLastUsedItems(toolId: String, items: List<String>) {
+        viewModelScope.launch {
+            repository.saveLastUsedItems(toolId, items)
+        }
+    }
+
+    fun showMessage(message: String) {
+        viewModelScope.launch {
+            _snackbarMessage.emit(message)
         }
     }
 
@@ -203,16 +219,16 @@ class RandomlyViewModel(
                 @Suppress("UNCHECKED_CAST")
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
                     val db = AppDatabase.getDatabase(application)
-                    val dataStore = DataStoreManager(application)
-                    val repo = RandomlyRepository(
+                    val dataStoreManager = DataStoreManager(application)
+                    val repository = RandomlyRepository(
                         historyDao = db.historyDao(),
                         favoritesDao = db.favoritesDao(),
                         savedListDao = db.savedListDao(),
                         toolUsageDao = db.toolUsageDao(),
                         toolPresetDao = db.toolPresetDao(),
-                        dataStoreManager = dataStore
+                        dataStoreManager = dataStoreManager
                     )
-                    return RandomlyViewModel(application, repo) as T
+                    return RandomlyViewModel(application, repository) as T
                 }
             }
     }

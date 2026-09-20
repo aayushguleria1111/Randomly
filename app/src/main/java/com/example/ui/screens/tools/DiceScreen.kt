@@ -1,15 +1,18 @@
 package com.example.ui.screens.tools
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -138,45 +141,52 @@ fun DiceScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
                 .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Animated Dice View
             rollResult?.let { result ->
                 item {
-                    AnimatedDiceView(
-                        diceType = result.diceType,
-                        rolls = result.rolls,
-                        isRolling = isRolling,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                    Box(modifier = Modifier.fillMaxWidth().widthIn(max = 520.dp)) {
+                        AnimatedDiceView(
+                            diceType = result.diceType,
+                            rolls = result.rolls,
+                            isRolling = isRolling,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                 }
 
                 // Result Card
                 item {
-                    ResultDisplayCard(
-                        resultText = "${result.total}",
-                        detailsText = result.equation,
-                        accentColor = ToolType.DICE.accentColor,
-                        onCopy = {
-                            ShareUtil.copyToClipboard(context, "${result.total} (${result.equation})")
-                            viewModel.showMessage("Copied dice result: ${result.total}")
-                        },
-                        onShare = {
-                            ShareUtil.shareText(
-                                context,
-                                "Dice Roll (${diceCount}×${result.diceType.label})",
-                                "Result: ${result.total}\nEquation: ${result.equation}"
-                            )
-                        },
-                        onRegenerate = { roll() }
-                    )
+                    Box(modifier = Modifier.fillMaxWidth().widthIn(max = 520.dp)) {
+                        ResultDisplayCard(
+                            resultText = "${result.total}",
+                            detailsText = result.equation,
+                            accentColor = ToolType.DICE.accentColor,
+                            onCopy = {
+                                ShareUtil.copyToClipboard(context, "${result.total} (${result.equation})")
+                                viewModel.showMessage("Copied dice result: ${result.total}")
+                            },
+                            onShare = {
+                                ShareUtil.shareText(
+                                    context,
+                                    "Dice Roll (${diceCount}×${result.diceType.label})",
+                                    "Result: ${result.total}\nEquation: ${result.equation}"
+                                )
+                            },
+                            onRegenerate = { roll() }
+                        )
+                    }
                 }
             }
 
             // Controls Card
             item {
                 Card(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .widthIn(max = 520.dp),
                     shape = RoundedCornerShape(20.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                 ) {
@@ -268,14 +278,20 @@ fun DiceScreen(
                             onClick = { roll() },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(52.dp)
+                                .heightIn(min = 48.dp, max = 52.dp)
                                 .testTag("roll_dice_button"),
                             shape = RoundedCornerShape(14.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = ToolType.DICE.accentColor)
                         ) {
                             Icon(Icons.Default.Casino, contentDescription = null, modifier = Modifier.size(20.dp))
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("ROLL DICE", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            Text(
+                                "ROLL DICE",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                            )
                         }
                     }
                 }

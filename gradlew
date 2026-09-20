@@ -10,8 +10,10 @@
 #      https://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the Apache License, Version 2.0 (the "License");
-# installation directory for Gradle.
+# distributed under the License is distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 #
 
 PRG="$0"
@@ -46,11 +48,29 @@ else
     JAVACMD="java"
 fi
 
-CLASSPATH=$APP_HOME/gradle/wrapper/gradle-wrapper.jar
+CLASSPATH="$APP_HOME/gradle/wrapper/gradle-wrapper.jar"
 
-# Check if wrapper jar exists, else fallback to system gradle
+# Check if wrapper jar exists
+if [ ! -f "$CLASSPATH" ]; then
+    if command -v gradle >/dev/null 2>&1; then
+        exec gradle "$@"
+    else
+        # Try to download gradle-wrapper.jar
+        mkdir -p "$APP_HOME/gradle/wrapper"
+        WRAPPER_URL="https://raw.githubusercontent.com/gradle/gradle/v8.11.1/gradle/wrapper/gradle-wrapper.jar"
+        if command -v curl >/dev/null 2>&1; then
+            curl -sSL "$WRAPPER_URL" -o "$CLASSPATH" >/dev/null 2>&1
+        elif command -v wget >/dev/null 2>&1; then
+            wget -q "$WRAPPER_URL" -O "$CLASSPATH" >/dev/null 2>&1
+        fi
+    fi
+fi
+
 if [ -f "$CLASSPATH" ]; then
     exec "$JAVACMD" $DEFAULT_JVM_OPTS $JAVA_OPTS $GRADLE_OPTS "-Dorg.gradle.appname=$APP_BASE_NAME" -classpath "$CLASSPATH" org.gradle.wrapper.GradleWrapperMain "$@"
-else
+elif command -v gradle >/dev/null 2>&1; then
     exec gradle "$@"
+else
+    echo "Error: Neither gradle-wrapper.jar nor gradle executable could be found." >&2
+    exit 1
 fi

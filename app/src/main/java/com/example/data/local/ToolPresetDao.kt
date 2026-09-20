@@ -26,4 +26,10 @@ interface ToolPresetDao {
 
     @Query("DELETE FROM tool_presets WHERE id = :id")
     suspend fun deletePresetById(id: Long)
+
+    @Query("DELETE FROM tool_presets WHERE isBuiltIn = 1")
+    suspend fun deleteBuiltInPresets()
+
+    @Query("SELECT COUNT(*) FROM tool_presets WHERE isBuiltIn = 1 AND toolId = :toolId")
+    suspend fun getBuiltInPresetCountForTool(toolId: String): Int
 }
