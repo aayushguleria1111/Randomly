@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Isometric Dice Shape in Safe Area (Center 66dp) -->
+    <!-- Top Face of Dice -->
+    <path
+        android:pathData="M54,27 L75,39 L54,51 L33,39 Z"
+        android:fillColor="#FFFFFF" />
+    <!-- Left Face of Dice -->
+    <path
+        android:pathData="M33,39 L54,51 L54,77 L33,65 Z"
+        android:fillColor="#E0E7FF" />
+    <!-- Right Face of Dice -->
+    <path
+        android:pathData="M54,51 L75,39 L75,65 L54,77 Z"
+        android:fillColor="#C7D2FE" />
+    
+    <!-- Pips on Top Face (3 pips) -->
+    <path
+        android:pathData="M43,36m-2.2,0a2.2,2.2 0 1,0 4.4,0a2.2,2.2 0 1,0 -4.4,0"
+        android:fillColor="#4F46E5" />
+    <path
+        android:pathData="M54,39m-2.2,0a2.2,2.2 0 1,0 4.4,0a2.2,2.2 0 1,0 -4.4,0"
+        android:fillColor="#4F46E5" />
+    <path
+        android:pathData="M65,42m-2.2,0a2.2,2.2 0 1,0 4.4,0a2.2,2.2 0 1,0 -4.4,0"
+        android:fillColor="#4F46E5" />
+
+    <!-- Pips on Left Face (2 pips) -->
+    <path
+        android:pathData="M41,49m-2.2,0a2.2,2.2 0 1,0 4.4,0a2.2,2.2 0 1,0 -4.4,0"
+        android:fillColor="#4338CA" />
+    <path
+        android:pathData="M47,63m-2.2,0a2.2,2.2 0 1,0 4.4,0a2.2,2.2 0 1,0 -4.4,0"
+        android:fillColor="#4338CA" />
+
+    <!-- Pips on Right Face (4 pips) -->
+    <path
+        android:pathData="M61,49m-2.2,0a2.2,2.2 0 1,0 4.4,0a2.2,2.2 0 1,0 -4.4,0"
+        android:fillColor="#3730A3" />
+    <path
+        android:pathData="M69,44m-2.2,0a2.2,2.2 0 1,0 4.4,0a2.2,2.2 0 1,0 -4.4,0"
+        android:fillColor="#3730A3" />
+    <path
+        android:pathData="M61,63m-2.2,0a2.2,2.2 0 1,0 4.4,0a2.2,2.2 0 1,0 -4.4,0"
+        android:fillColor="#3730A3" />
+    <path
+        android:pathData="M69,58m-2.2,0a2.2,2.2 0 1,0 4.4,0a2.2,2.2 0 1,0 -4.4,0"
+        android:fillColor="#3730A3" />
+
+    <!-- Sparkle / Star 1 (Top-right) -->
+    <path
+        android:pathData="M81,24 Q81,29 86,29 Q81,29 81,34 Q81,29 76,29 Q81,29 81,24 Z"
+        android:fillColor="#FDE047" />
+
+    <!-- Sparkle / Star 2 (Bottom-left) -->
+    <path
+        android:pathData="M26,68 Q26,72 30,72 Q26,72 26,76 Q26,72 22,72 Q26,72 26,68 Z"
+        android:fillColor="#FDE047" />
+
+    <!-- Sparkle / Star 3 (Top-left small) -->
+    <path
+        android:pathData="M31,23 Q31,25 33,25 Q31,25 31,27 Q31,25 29,25 Q31,25 31,23 Z"
+        android:fillColor="#FFFFFF" />
+</vector>

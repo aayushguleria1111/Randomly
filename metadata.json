@@ -1,0 +1,6 @@
+{
+  "name": "Randomly",
+  "description": "All-in-one randomness toolbox for numbers, colors, wheel spins, dice, lists, decisions, and more.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
