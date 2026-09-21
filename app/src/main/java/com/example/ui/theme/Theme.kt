@@ -8,9 +8,14 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import com.example.data.model.AppColorTheme
+import com.example.data.model.AppTextSize
 import com.example.data.model.AppThemeMode
 
 private fun buildLightScheme(primary: Color, secondary: Color) = lightColorScheme(
@@ -63,6 +68,7 @@ private fun buildDarkScheme(primary: Color, secondary: Color) = darkColorScheme(
 fun RandomlyTheme(
     themeMode: AppThemeMode = AppThemeMode.SYSTEM,
     colorTheme: AppColorTheme = AppColorTheme.INDIGO,
+    textSize: AppTextSize = AppTextSize.SMALL_MEDIUM,
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
@@ -84,10 +90,22 @@ fun RandomlyTheme(
         else -> buildLightScheme(primary, secondary)
     }
 
+    val currentDensity = LocalDensity.current
+    val scaledDensity = remember(currentDensity.density, currentDensity.fontScale, textSize) {
+        Density(
+            density = currentDensity.density,
+            fontScale = currentDensity.fontScale * textSize.scaleMultiplier
+        )
+    }
+
     MaterialTheme(
         colorScheme = colorScheme,
         typography = Typography,
-        shapes = Shapes,
-        content = content
-    )
+        shapes = Shapes
+    ) {
+        CompositionLocalProvider(
+            LocalDensity provides scaledDensity,
+            content = content
+        )
+    }
 }

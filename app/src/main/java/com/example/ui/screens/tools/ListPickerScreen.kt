@@ -43,6 +43,9 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -52,12 +55,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -68,6 +74,8 @@ import com.example.data.model.ToolType
 import com.example.ui.components.ResultDisplayCard
 import com.example.ui.theme.AmberAccent
 import com.example.ui.viewmodel.RandomlyViewModel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import com.example.util.HapticFeedbackUtil
 import com.example.util.ShareUtil
 import java.security.SecureRandom
@@ -105,6 +113,11 @@ fun ListPickerScreen(
         viewModel.saveLastUsedItems(ToolType.LIST_PICKER.id, items.toList())
     }
 
+    val scope = rememberCoroutineScope()
+    var isPicking by remember { mutableStateOf(false) }
+    var activeTickerIndex by remember { mutableIntStateOf(-1) }
+    val resultScale = remember { Animatable(1f) }
+
     var newItemInput by remember { mutableStateOf("") }
     var pickCountInput by remember { mutableStateOf("1") }
     var allowDuplicates by remember { mutableStateOf(false) }
@@ -115,40 +128,76 @@ fun ListPickerScreen(
     var presetToDelete by remember { mutableStateOf<ToolPreset?>(null) }
 
     fun pickItems() {
-        if (items.isEmpty()) return
+        if (items.isEmpty() || isPicking) return
+        isPicking = true
         HapticFeedbackUtil.performImpact(context, settings.hapticsEnabled)
 
-        val count = pickCountInput.toIntOrNull()?.coerceAtLeast(1) ?: 1
-        val random = SecureRandom()
+        scope.launch {
+            val count = pickCountInput.toIntOrNull()?.coerceAtLeast(1) ?: 1
+            val random = SecureRandom()
 
-        val results = if (allowDuplicates) {
-            List(count) { items[random.nextInt(items.size)] }
-        } else {
-            val shuffled = items.shuffled(random)
-            shuffled.take(count.coerceAtMost(items.size))
+            if (settings.animationsEnabled && items.size > 1) {
+                val totalTicks = 12
+                for (i in 0 until totalTicks) {
+                    activeTickerIndex = random.nextInt(items.size)
+                    HapticFeedbackUtil.performImpact(context, settings.hapticsEnabled)
+                    val delayMs = 35L + (i * 18L)
+                    delay(delayMs)
+                }
+            }
+            activeTickerIndex = -1
+
+            val results = if (allowDuplicates) {
+                List(count) { items[random.nextInt(items.size)] }
+            } else {
+                val shuffled = items.shuffled(random)
+                shuffled.take(count.coerceAtMost(items.size))
+            }
+
+            pickedResults = results
+            val resultStr = results.joinToString(", ")
+
+            if (settings.animationsEnabled) {
+                resultScale.snapTo(0.7f)
+                resultScale.animateTo(
+                    1f,
+                    animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium)
+                )
+            }
+
+            HapticFeedbackUtil.performSuccess(context, settings.hapticsEnabled)
+            isPicking = false
+
+            viewModel.recordResult(
+                toolType = ToolType.LIST_PICKER,
+                title = "List Picker",
+                result = resultStr,
+                details = "Picked $count out of ${items.size} items"
+            )
         }
-
-        pickedResults = results
-        val resultStr = results.joinToString(", ")
-
-        HapticFeedbackUtil.performSuccess(context, settings.hapticsEnabled)
-
-        viewModel.recordResult(
-            toolType = ToolType.LIST_PICKER,
-            title = "List Picker",
-            result = resultStr,
-            details = "Picked $count out of ${items.size} items"
-        )
     }
 
     fun shuffleList() {
-        if (items.isEmpty()) return
+        if (items.isEmpty() || isPicking) return
+        isPicking = true
         HapticFeedbackUtil.performImpact(context, settings.hapticsEnabled)
-        val random = SecureRandom()
-        items.shuffle(random)
-        pickedResults = items.toList()
-        persistCurrentItems()
-        viewModel.showMessage("List shuffled completely")
+        scope.launch {
+            if (settings.animationsEnabled) {
+                repeat(4) {
+                    val r = SecureRandom()
+                    items.shuffle(r)
+                    HapticFeedbackUtil.performImpact(context, settings.hapticsEnabled)
+                    delay(70)
+                }
+            }
+            val random = SecureRandom()
+            items.shuffle(random)
+            pickedResults = items.toList()
+            persistCurrentItems()
+            isPicking = false
+            HapticFeedbackUtil.performSuccess(context, settings.hapticsEnabled)
+            viewModel.showMessage("List shuffled completely")
+        }
     }
 
     Scaffold(
@@ -185,7 +234,15 @@ fun ListPickerScreen(
             if (pickedResults.isNotEmpty()) {
                 item {
                     val display = pickedResults.joinToString(", ")
-                    Box(modifier = Modifier.fillMaxWidth().widthIn(max = 520.dp)) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .widthIn(max = 520.dp)
+                            .graphicsLayer {
+                                scaleX = resultScale.value
+                                scaleY = resultScale.value
+                            }
+                    ) {
                         ResultDisplayCard(
                             resultText = display,
                             detailsText = "Selected from your list of ${items.size} items",
@@ -213,7 +270,7 @@ fun ListPickerScreen(
                 ) {
                     Button(
                         onClick = { pickItems() },
-                        enabled = items.isNotEmpty(),
+                        enabled = items.isNotEmpty() && !isPicking,
                         modifier = Modifier
                             .weight(1.3f)
                             .heightIn(min = 48.dp, max = 52.dp)
@@ -224,7 +281,7 @@ fun ListPickerScreen(
                         Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(20.dp))
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            "Pick Random",
+                            if (isPicking) "Picking..." else "Pick Random",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,
@@ -234,7 +291,7 @@ fun ListPickerScreen(
 
                     OutlinedButton(
                         onClick = { shuffleList() },
-                        enabled = items.isNotEmpty(),
+                        enabled = items.isNotEmpty() && !isPicking,
                         modifier = Modifier
                             .weight(0.9f)
                             .heightIn(min = 48.dp, max = 52.dp),
@@ -408,14 +465,22 @@ fun ListPickerScreen(
 
             // Items List
             itemsIndexed(items) { index, item ->
+                val isHighlighted = index == activeTickerIndex
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
                         .widthIn(max = 520.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
-                    )
+                        containerColor = if (isHighlighted) {
+                            ToolType.LIST_PICKER.accentColor.copy(alpha = 0.35f)
+                        } else {
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+                        }
+                    ),
+                    border = if (isHighlighted) {
+                        BorderStroke(2.dp, ToolType.LIST_PICKER.accentColor)
+                    } else null
                 ) {
                     Row(
                         modifier = Modifier

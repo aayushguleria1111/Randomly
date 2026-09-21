@@ -30,6 +30,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.util.RandomGenerators.CoinSide
+import kotlinx.coroutines.async
 
 @Composable
 fun AnimatedCoinView(
@@ -37,24 +38,34 @@ fun AnimatedCoinView(
     isFlipping: Boolean,
     modifier: Modifier = Modifier
 ) {
-    val rotationY = remember { Animatable(0f) }
+    val rotationX = remember { Animatable(0f) }
     val translationY = remember { Animatable(0f) }
+    val scale = remember { Animatable(1f) }
 
     LaunchedEffect(isFlipping) {
         if (isFlipping) {
-            // Jump up and rotate multiple times
-            rotationY.snapTo(0f)
-            translationY.animateTo(-80f, animationSpec = tween(350, easing = FastOutSlowInEasing))
-            translationY.animateTo(0f, animationSpec = tween(350, easing = FastOutSlowInEasing))
-        }
-    }
-
-    LaunchedEffect(isFlipping) {
-        if (isFlipping) {
-            rotationY.animateTo(
-                targetValue = 1800f + if (result == CoinSide.HEADS) 0f else 180f,
-                animationSpec = tween(700, easing = FastOutSlowInEasing)
-            )
+            // Authentic vertical toss arc
+            rotationX.snapTo(0f)
+            val flightUp = async {
+                scale.animateTo(1.25f, tween(380, easing = androidx.compose.animation.core.LinearOutSlowInEasing))
+                scale.animateTo(1.0f, tween(360, easing = androidx.compose.animation.core.FastOutLinearInEasing))
+            }
+            val tossUp = async {
+                translationY.animateTo(-140f, animationSpec = tween(380, easing = androidx.compose.animation.core.LinearOutSlowInEasing))
+                translationY.animateTo(0f, animationSpec = tween(360, easing = androidx.compose.animation.core.FastOutLinearInEasing))
+                // Bounce settle
+                translationY.animateTo(-18f, animationSpec = tween(90, easing = androidx.compose.animation.core.LinearOutSlowInEasing))
+                translationY.animateTo(0f, animationSpec = tween(80, easing = androidx.compose.animation.core.FastOutLinearInEasing))
+            }
+            val rot = async {
+                rotationX.animateTo(
+                    targetValue = 2160f + if (result == CoinSide.HEADS) 0f else 180f,
+                    animationSpec = tween(910, easing = androidx.compose.animation.core.CubicBezierEasing(0.2f, 0f, 0.15f, 1f))
+                )
+            }
+            flightUp.await()
+            tossUp.await()
+            rot.await()
         }
     }
 
@@ -62,13 +73,15 @@ fun AnimatedCoinView(
         modifier = modifier
             .size(160.dp)
             .graphicsLayer {
-                this.rotationY = rotationY.value
+                this.rotationX = rotationX.value
                 this.translationY = translationY.value
-                cameraDistance = 12f * density
+                this.scaleX = scale.value
+                this.scaleY = scale.value
+                cameraDistance = 14f * density
             },
         contentAlignment = Alignment.Center
     ) {
-        val isHeadsVisible = (rotationY.value.toInt() / 180) % 2 == 0
+        val isHeadsVisible = (rotationX.value.toInt() / 180) % 2 == 0
         val currentDisplay = if (isHeadsVisible) CoinSide.HEADS else CoinSide.TAILS
 
         // Outer Coin Disk (Gold Gradient with edge ridges)

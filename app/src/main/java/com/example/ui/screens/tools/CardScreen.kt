@@ -54,6 +54,8 @@ import com.example.util.HapticFeedbackUtil
 import com.example.util.RandomGenerators
 import com.example.util.RandomGenerators.PlayingCard
 import com.example.util.ShareUtil
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -69,21 +71,39 @@ fun CardScreen(
     var allowDuplicates by remember { mutableStateOf(false) }
 
     var drawnCards by remember { mutableStateOf<List<PlayingCard>>(emptyList()) }
+    var isDealing by remember { mutableStateOf(false) }
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
 
     fun draw() {
-        val cards = RandomGenerators.drawCards(cardCount, allowDuplicates)
-        drawnCards = cards
-        HapticFeedbackUtil.performSuccess(context, settings.hapticsEnabled)
+        if (isDealing) return
+        isDealing = true
+        scope.launch {
+            HapticFeedbackUtil.performImpact(context, settings.hapticsEnabled)
+            val cards = RandomGenerators.drawCards(cardCount, allowDuplicates)
+            drawnCards = cards
 
-        val resultDisplay = cards.joinToString(", ") { "${it.rank.symbol}${it.suit.symbol}" }
-        val details = cards.joinToString(", ") { "${it.rank.displayName} of ${it.suit.displayName}" }
+            if (settings.animationsEnabled) {
+                // Haptic feedback as cards flip
+                for (i in cards.indices) {
+                    kotlinx.coroutines.delay(120L)
+                    HapticFeedbackUtil.performImpact(context, settings.hapticsEnabled)
+                }
+                kotlinx.coroutines.delay(350L)
+            }
 
-        viewModel.recordResult(
-            toolType = ToolType.CARD,
-            title = "Playing Card (${cards.size} card${if (cards.size > 1) "s" else ""})",
-            result = resultDisplay,
-            details = details
-        )
+            isDealing = false
+            HapticFeedbackUtil.performSuccess(context, settings.hapticsEnabled)
+
+            val resultDisplay = cards.joinToString(", ") { "${it.rank.symbol}${it.suit.symbol}" }
+            val details = cards.joinToString(", ") { "${it.rank.displayName} of ${it.suit.displayName}" }
+
+            viewModel.recordResult(
+                toolType = ToolType.CARD,
+                title = "Playing Card (${cards.size} card${if (cards.size > 1) "s" else ""})",
+                result = resultDisplay,
+                details = details
+            )
+        }
     }
 
     LaunchedEffect(Unit) {
@@ -130,8 +150,13 @@ fun CardScreen(
                         horizontalArrangement = Arrangement.Center,
                         verticalArrangement = Arrangement.Center
                     ) {
-                        drawnCards.forEach { card ->
-                            PlayingCardView(card = card, modifier = Modifier.padding(6.dp))
+                        drawnCards.forEachIndexed { index, card ->
+                            PlayingCardView(
+                                card = card,
+                                dealIndex = index,
+                                animateDeal = settings.animationsEnabled,
+                                modifier = Modifier.padding(6.dp)
+                            )
                         }
                     }
                 }
@@ -199,6 +224,7 @@ fun CardScreen(
 
                         Button(
                             onClick = { draw() },
+                            enabled = !isDealing,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(52.dp)
@@ -207,7 +233,7 @@ fun CardScreen(
                         ) {
                             Icon(Icons.Default.FilterNone, contentDescription = null, modifier = Modifier.size(20.dp))
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Draw Cards", style = MaterialTheme.typography.titleMedium)
+                            Text(if (isDealing) "Dealing Cards..." else "Draw Cards", style = MaterialTheme.typography.titleMedium)
                         }
                     }
                 }

@@ -46,6 +46,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
@@ -60,6 +61,8 @@ import com.example.ui.viewmodel.RandomlyViewModel
 import com.example.util.HapticFeedbackUtil
 import com.example.util.RandomGenerators
 import com.example.util.ShareUtil
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -78,7 +81,12 @@ fun NumberScreen(
     var allowDuplicates by remember { mutableStateOf(false) }
 
     var results by remember { mutableStateOf<List<Int>>(emptyList()) }
+    var displayResults by remember { mutableStateOf<List<Int>>(emptyList()) }
+    var isRolling by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    val rollScale = remember { androidx.compose.animation.core.Animatable(1f) }
+    val shakeX = remember { androidx.compose.animation.core.Animatable(0f) }
 
     val allHistory by viewModel.history.collectAsState()
     val recentHistory = remember(allHistory) {
@@ -86,6 +94,7 @@ fun NumberScreen(
     }
 
     fun generate() {
+        if (isRolling) return
         errorMessage = null
         val min = minInput.toIntOrNull()
         val max = maxInput.toIntOrNull()
@@ -107,16 +116,45 @@ fun NumberScreen(
         val genResult = RandomGenerators.generateNumbers(min, max, count, allowDuplicates)
         genResult.fold(
             onSuccess = { generated ->
-                results = generated
-                HapticFeedbackUtil.performSuccess(context, settings.hapticsEnabled)
-                val resultStr = if (generated.size == 1) "${generated.first()}" else generated.joinToString(", ")
-                val detailsStr = "Range: $min to $max | Count: $count"
-                viewModel.recordResult(
-                    toolType = ToolType.NUMBER,
-                    title = "Random Number",
-                    result = resultStr,
-                    details = detailsStr
-                )
+                scope.launch {
+                    isRolling = true
+                    if (settings.animationsEnabled) {
+                        val random = java.security.SecureRandom()
+                        val iterations = 8
+                        for (i in 0 until iterations) {
+                            displayResults = List(count) { min + random.nextInt(max - min + 1) }
+                            HapticFeedbackUtil.performImpact(context, settings.hapticsEnabled)
+                            shakeX.animateTo(if (i % 2 == 0) -4f else 4f, androidx.compose.animation.core.tween(50))
+                            kotlinx.coroutines.delay(50)
+                        }
+                        shakeX.snapTo(0f)
+                    }
+
+                    results = generated
+                    displayResults = generated
+                    isRolling = false
+                    HapticFeedbackUtil.performSuccess(context, settings.hapticsEnabled)
+
+                    if (settings.animationsEnabled) {
+                        rollScale.snapTo(1.15f)
+                        rollScale.animateTo(
+                            targetValue = 1f,
+                            animationSpec = androidx.compose.animation.core.spring(
+                                dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
+                                stiffness = androidx.compose.animation.core.Spring.StiffnessLow
+                            )
+                        )
+                    }
+
+                    val resultStr = if (generated.size == 1) "${generated.first()}" else generated.joinToString(", ")
+                    val detailsStr = "Range: $min to $max | Count: $count"
+                    viewModel.recordResult(
+                        toolType = ToolType.NUMBER,
+                        title = "Random Number",
+                        result = resultStr,
+                        details = detailsStr
+                    )
+                }
             },
             onFailure = { ex ->
                 errorMessage = ex.message ?: "Invalid range configuration"
@@ -160,12 +198,22 @@ fun NumberScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             item {
-                if (results.isNotEmpty()) {
-                    val resultDisplay = if (results.size == 1) "${results.first()}" else results.joinToString(", ")
-                    Box(modifier = Modifier.fillMaxWidth().widthIn(max = 520.dp)) {
+                if (displayResults.isNotEmpty() || results.isNotEmpty()) {
+                    val activeList = if (displayResults.isNotEmpty()) displayResults else results
+                    val resultDisplay = if (activeList.size == 1) "${activeList.first()}" else activeList.joinToString(", ")
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .widthIn(max = 520.dp)
+                            .graphicsLayer {
+                                scaleX = rollScale.value
+                                scaleY = rollScale.value
+                                translationX = shakeX.value
+                            }
+                    ) {
                         ResultDisplayCard(
                             resultText = resultDisplay,
-                            detailsText = "Range: $minInput → $maxInput (${results.size} number${if (results.size > 1) "s" else ""})",
+                            detailsText = if (isRolling) "Rolling..." else "Range: $minInput → $maxInput (${activeList.size} number${if (activeList.size > 1) "s" else ""})",
                             accentColor = ToolType.NUMBER.accentColor,
                             onCopy = {
                                 ShareUtil.copyToClipboard(context, resultDisplay)
@@ -279,6 +327,7 @@ fun NumberScreen(
 
                         Button(
                             onClick = { generate() },
+                            enabled = !isRolling,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .heightIn(min = 48.dp, max = 52.dp)
@@ -288,7 +337,7 @@ fun NumberScreen(
                             Icon(Icons.Default.Casino, contentDescription = null, modifier = Modifier.size(20.dp))
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                "Generate Numbers",
+                                if (isRolling) "Rolling Numbers..." else "Generate Numbers",
                                 style = MaterialTheme.typography.titleMedium,
                                 maxLines = 1,
                                 overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis

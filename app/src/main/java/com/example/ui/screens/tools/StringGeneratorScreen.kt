@@ -1,6 +1,10 @@
 package com.example.ui.screens.tools
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -37,9 +41,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -51,6 +57,8 @@ import com.example.ui.viewmodel.RandomlyViewModel
 import com.example.util.HapticFeedbackUtil
 import com.example.util.RandomGenerators
 import com.example.util.ShareUtil
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -59,6 +67,7 @@ fun StringGeneratorScreen(
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val settings by viewModel.settings.collectAsState()
     val isFavorite = viewModel.isToolFavorite(ToolType.STRING_GENERATOR.id)
 
@@ -71,11 +80,15 @@ fun StringGeneratorScreen(
 
     var generatedString by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var isGenerating by remember { mutableStateOf(false) }
+    val stringScale = remember { Animatable(1f) }
 
     fun generate() {
+        if (isGenerating) return
         errorMessage = null
         val length = lengthSlider.toInt()
-        val result = RandomGenerators.generateString(
+
+        val preliminaryCheck = RandomGenerators.generateString(
             length = length,
             includeUpper = includeUpper,
             includeLower = includeLower,
@@ -84,21 +97,62 @@ fun StringGeneratorScreen(
             avoidAmbiguous = avoidAmbiguous
         )
 
-        result.fold(
-            onSuccess = { str ->
-                generatedString = str
-                HapticFeedbackUtil.performSuccess(context, settings.hapticsEnabled)
-                viewModel.recordResult(
-                    toolType = ToolType.STRING_GENERATOR,
-                    title = "Random String ($length chars)",
-                    result = str,
-                    details = "Test / Dummy Value"
-                )
-            },
-            onFailure = { ex ->
-                errorMessage = ex.message ?: "Select at least one character type"
+        if (preliminaryCheck.isFailure) {
+            errorMessage = preliminaryCheck.exceptionOrNull()?.message ?: "Select at least one character type"
+            return
+        }
+
+        isGenerating = true
+        HapticFeedbackUtil.performImpact(context, settings.hapticsEnabled)
+
+        scope.launch {
+            if (settings.animationsEnabled) {
+                val cycleChars = "!@#$%&*0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+                val r = java.security.SecureRandom()
+                val steps = 8
+                for (step in 0 until steps) {
+                    val scrambleLen = length.coerceAtMost(32)
+                    generatedString = (0 until scrambleLen).map { cycleChars[r.nextInt(cycleChars.length)] }.joinToString("")
+                    HapticFeedbackUtil.performImpact(context, settings.hapticsEnabled)
+                    val delayMs = 30L + (step * 15L)
+                    delay(delayMs)
+                }
             }
-        )
+
+            val finalResult = RandomGenerators.generateString(
+                length = length,
+                includeUpper = includeUpper,
+                includeLower = includeLower,
+                includeNumbers = includeNumbers,
+                includeSymbols = includeSymbols,
+                avoidAmbiguous = avoidAmbiguous
+            )
+
+            finalResult.fold(
+                onSuccess = { str ->
+                    generatedString = str
+                    if (settings.animationsEnabled) {
+                        stringScale.snapTo(0.7f)
+                        stringScale.animateTo(
+                            1f,
+                            animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium)
+                        )
+                    }
+                    HapticFeedbackUtil.performSuccess(context, settings.hapticsEnabled)
+                    viewModel.recordResult(
+                        toolType = ToolType.STRING_GENERATOR,
+                        title = "Random String ($length chars)",
+                        result = str,
+                        details = "Test / Dummy Value"
+                    )
+                },
+                onFailure = { ex ->
+                    errorMessage = ex.message ?: "Select at least one character type"
+                }
+            )
+
+            isGenerating = false
+        }
     }
 
     LaunchedEffect(Unit) {
@@ -159,19 +213,26 @@ fun StringGeneratorScreen(
 
             if (generatedString.isNotEmpty()) {
                 item {
-                    ResultDisplayCard(
-                        resultText = generatedString,
-                        detailsText = "Length: ${lengthSlider.toInt()} characters",
-                        accentColor = ToolType.STRING_GENERATOR.accentColor,
-                        onCopy = {
-                            ShareUtil.copyToClipboard(context, generatedString)
-                            viewModel.showMessage("Copied string to clipboard")
-                        },
-                        onShare = {
-                            ShareUtil.shareText(context, "Random String", generatedString)
-                        },
-                        onRegenerate = { generate() }
-                    )
+                    Box(
+                        modifier = Modifier.graphicsLayer {
+                            scaleX = stringScale.value
+                            scaleY = stringScale.value
+                        }
+                    ) {
+                        ResultDisplayCard(
+                            resultText = generatedString,
+                            detailsText = "Length: ${lengthSlider.toInt()} characters",
+                            accentColor = ToolType.STRING_GENERATOR.accentColor,
+                            onCopy = {
+                                ShareUtil.copyToClipboard(context, generatedString)
+                                viewModel.showMessage("Copied string to clipboard")
+                            },
+                            onShare = {
+                                ShareUtil.shareText(context, "Random String", generatedString)
+                            },
+                            onRegenerate = { generate() }
+                        )
+                    }
                 }
             }
 
@@ -233,6 +294,7 @@ fun StringGeneratorScreen(
 
                         Button(
                             onClick = { generate() },
+                            enabled = !isGenerating,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(52.dp)
@@ -241,7 +303,10 @@ fun StringGeneratorScreen(
                         ) {
                             Icon(Icons.Default.Key, contentDescription = null, modifier = Modifier.size(20.dp))
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Generate Random String", style = MaterialTheme.typography.titleMedium)
+                            Text(
+                                if (isGenerating) "Scrambling..." else "Generate Random String",
+                                style = MaterialTheme.typography.titleMedium
+                            )
                         }
                     }
                 }

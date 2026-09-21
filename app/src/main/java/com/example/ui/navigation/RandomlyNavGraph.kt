@@ -11,9 +11,11 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -39,6 +41,7 @@ import com.example.ui.screens.tools.TimeScreen
 import com.example.ui.screens.tools.WheelScreen
 import com.example.ui.screens.tools.YesNoScreen
 import com.example.ui.viewmodel.RandomlyViewModel
+import com.example.util.AudioHapticFeedback
 
 @Composable
 fun RandomlyNavGraph(
@@ -46,6 +49,8 @@ fun RandomlyNavGraph(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController()
 ) {
+    val context = LocalContext.current
+    val settings by viewModel.settings.collectAsState()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
     val snackbarHostState = remember { SnackbarHostState() }
@@ -70,6 +75,7 @@ fun RandomlyNavGraph(
                             selected = selected,
                             onClick = {
                                 if (currentRoute != screen.route) {
+                                    AudioHapticFeedback.onTabSwitch(context, settings.soundEffectsEnabled, settings.hapticsEnabled)
                                     navController.navigate(screen.route) {
                                         popUpTo(navController.graph.findStartDestination().id) {
                                             saveState = true
@@ -102,6 +108,7 @@ fun RandomlyNavGraph(
                 HomeScreen(
                     viewModel = viewModel,
                     onNavigateToTool = { tool ->
+                        AudioHapticFeedback.onToolClick(context, settings.soundEffectsEnabled, settings.hapticsEnabled)
                         val targetRoute = when (tool) {
                             ToolType.NUMBER -> Screen.Number.route
                             ToolType.COLOR -> Screen.Color.route
@@ -126,6 +133,7 @@ fun RandomlyNavGraph(
                 FavoritesScreen(
                     viewModel = viewModel,
                     onNavigateToTool = { tool ->
+                        AudioHapticFeedback.onToolClick(context, settings.soundEffectsEnabled, settings.hapticsEnabled)
                         val targetRoute = when (tool) {
                             ToolType.NUMBER -> Screen.Number.route
                             ToolType.COLOR -> Screen.Color.route

@@ -10,6 +10,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.example.data.model.AppColorTheme
 import com.example.data.model.AppSettings
+import com.example.data.model.AppTextSize
 import com.example.data.model.AppThemeMode
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -21,6 +22,8 @@ class DataStoreManager(private val context: Context) {
     companion object {
         val THEME_MODE = stringPreferencesKey("theme_mode")
         val COLOR_THEME = stringPreferencesKey("color_theme")
+        val TEXT_SIZE = stringPreferencesKey("text_size")
+        val SOUND_EFFECTS_ENABLED = booleanPreferencesKey("sound_effects_enabled")
         val HAPTICS_ENABLED = booleanPreferencesKey("haptics_enabled")
         val ANIMATIONS_ENABLED = booleanPreferencesKey("animations_enabled")
         val SAVE_HISTORY_ENABLED = booleanPreferencesKey("save_history_enabled")
@@ -44,9 +47,18 @@ class DataStoreManager(private val context: Context) {
             AppColorTheme.INDIGO
         }
 
+        val textSizeStr = preferences[TEXT_SIZE] ?: AppTextSize.SMALL_MEDIUM.name
+        val textSize = try {
+            AppTextSize.valueOf(textSizeStr)
+        } catch (e: Exception) {
+            AppTextSize.SMALL_MEDIUM
+        }
+
         AppSettings(
             themeMode = themeMode,
             colorTheme = colorTheme,
+            textSize = textSize,
+            soundEffectsEnabled = preferences[SOUND_EFFECTS_ENABLED] ?: true,
             hapticsEnabled = preferences[HAPTICS_ENABLED] ?: true,
             animationsEnabled = preferences[ANIMATIONS_ENABLED] ?: true,
             saveHistoryEnabled = preferences[SAVE_HISTORY_ENABLED] ?: true,
@@ -65,6 +77,18 @@ class DataStoreManager(private val context: Context) {
     suspend fun setColorTheme(colorTheme: AppColorTheme) {
         context.dataStore.edit { preferences ->
             preferences[COLOR_THEME] = colorTheme.name
+        }
+    }
+
+    suspend fun setTextSize(textSize: AppTextSize) {
+        context.dataStore.edit { preferences ->
+            preferences[TEXT_SIZE] = textSize.name
+        }
+    }
+
+    suspend fun setSoundEffectsEnabled(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[SOUND_EFFECTS_ENABLED] = enabled
         }
     }
 

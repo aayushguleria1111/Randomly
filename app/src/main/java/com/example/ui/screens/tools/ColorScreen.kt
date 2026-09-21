@@ -45,6 +45,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -55,6 +56,8 @@ import com.example.ui.theme.AmberAccent
 import com.example.ui.viewmodel.RandomlyViewModel
 import com.example.util.HapticFeedbackUtil
 import com.example.util.ShareUtil
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.security.SecureRandom
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -68,23 +71,57 @@ fun ColorScreen(
     val isFavorite = viewModel.isToolFavorite(ToolType.COLOR.id)
 
     var currentColor by remember { mutableStateOf(Color(0xFF6366F1)) }
+    var isBlending by remember { mutableStateOf(false) }
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    val colorScale = remember { androidx.compose.animation.core.Animatable(1f) }
+    val colorRotation = remember { androidx.compose.animation.core.Animatable(0f) }
 
     fun generateColor() {
-        HapticFeedbackUtil.performImpact(context, settings.hapticsEnabled)
-        val random = SecureRandom()
-        val r = random.nextInt(256)
-        val g = random.nextInt(256)
-        val b = random.nextInt(256)
-        val color = Color(r, g, b)
-        currentColor = color
+        if (isBlending) return
+        isBlending = true
+        scope.launch {
+            val random = SecureRandom()
+            if (settings.animationsEnabled) {
+                val cycleJob = launch {
+                    for (i in 1..6) {
+                        currentColor = Color(random.nextInt(256), random.nextInt(256), random.nextInt(256))
+                        HapticFeedbackUtil.performImpact(context, settings.hapticsEnabled)
+                        kotlinx.coroutines.delay(60)
+                    }
+                }
+                val scaleJob = launch {
+                    colorScale.animateTo(0.92f, androidx.compose.animation.core.tween(150))
+                }
+                cycleJob.join()
+                scaleJob.join()
+            }
 
-        val hex = String.format("#%02X%02X%02X", r, g, b)
-        viewModel.recordResult(
-            toolType = ToolType.COLOR,
-            title = "Random Color",
-            result = hex,
-            details = "RGB: ($r, $g, $b)"
-        )
+            val r = random.nextInt(256)
+            val g = random.nextInt(256)
+            val b = random.nextInt(256)
+            val color = Color(r, g, b)
+            currentColor = color
+            isBlending = false
+            HapticFeedbackUtil.performSuccess(context, settings.hapticsEnabled)
+
+            if (settings.animationsEnabled) {
+                colorScale.animateTo(
+                    targetValue = 1f,
+                    animationSpec = androidx.compose.animation.core.spring(
+                        dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
+                        stiffness = androidx.compose.animation.core.Spring.StiffnessLow
+                    )
+                )
+            }
+
+            val hex = String.format("#%02X%02X%02X", r, g, b)
+            viewModel.recordResult(
+                toolType = ToolType.COLOR,
+                title = "Random Color",
+                result = hex,
+                details = "RGB: ($r, $g, $b)"
+            )
+        }
     }
 
     val hexString = String.format(
@@ -128,7 +165,11 @@ fun ColorScreen(
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(260.dp),
+                        .height(260.dp)
+                        .graphicsLayer {
+                            scaleX = colorScale.value
+                            scaleY = colorScale.value
+                        },
                     shape = RoundedCornerShape(24.dp),
                     elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                 ) {
@@ -165,6 +206,7 @@ fun ColorScreen(
             item {
                 Button(
                     onClick = { generateColor() },
+                    enabled = !isBlending,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(52.dp)
@@ -174,7 +216,12 @@ fun ColorScreen(
                 ) {
                     Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(20.dp), tint = Color.White)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Generate New Color", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text(
+                        if (isBlending) "Mixing Color..." else "Generate New Color",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
                 }
             }
 

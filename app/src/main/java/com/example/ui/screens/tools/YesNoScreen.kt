@@ -58,6 +58,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -74,6 +75,8 @@ import com.example.ui.viewmodel.RandomlyViewModel
 import com.example.util.HapticFeedbackUtil
 import com.example.util.RandomGenerators
 import com.example.util.ShareUtil
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 private const val MAX_QUESTION_LENGTH = 30
 
@@ -90,28 +93,66 @@ fun YesNoScreen(
     var includeMaybe by remember { mutableStateOf(false) }
     var questionInput by remember { mutableStateOf("") }
     var resultText by remember { mutableStateOf<String?>("YES") }
+    var isDeciding by remember { mutableStateOf(false) }
 
     var yesCount by remember { mutableIntStateOf(0) }
     var noCount by remember { mutableIntStateOf(0) }
     var maybeCount by remember { mutableIntStateOf(0) }
 
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    val shakeAngle = remember { androidx.compose.animation.core.Animatable(0f) }
+    val shakeOffset = remember { androidx.compose.animation.core.Animatable(0f) }
+    val popScale = remember { androidx.compose.animation.core.Animatable(1f) }
+
     fun decide() {
-        val decision = RandomGenerators.generateYesNo(includeMaybe)
-        resultText = decision
-        HapticFeedbackUtil.performSuccess(context, settings.hapticsEnabled)
+        if (isDeciding) return
+        isDeciding = true
+        scope.launch {
+            if (settings.animationsEnabled) {
+                // Mystical wobble/shake
+                val shakeJob = launch {
+                    for (i in 1..5) {
+                        HapticFeedbackUtil.performImpact(context, settings.hapticsEnabled)
+                        val angle = if (i % 2 == 0) 7f else -7f
+                        val offset = if (i % 2 == 0) 9f else -9f
+                        shakeAngle.animateTo(angle, androidx.compose.animation.core.tween(50))
+                        shakeOffset.animateTo(offset, androidx.compose.animation.core.tween(50))
+                    }
+                    shakeAngle.animateTo(0f, androidx.compose.animation.core.tween(60))
+                    shakeOffset.animateTo(0f, androidx.compose.animation.core.tween(60))
+                }
+                shakeJob.join()
+            }
 
-        when (decision) {
-            "YES" -> yesCount++
-            "NO" -> noCount++
-            else -> maybeCount++
+            val decision = RandomGenerators.generateYesNo(includeMaybe)
+            resultText = decision
+            isDeciding = false
+            HapticFeedbackUtil.performSuccess(context, settings.hapticsEnabled)
+
+            if (settings.animationsEnabled) {
+                popScale.snapTo(0.7f)
+                popScale.animateTo(
+                    targetValue = 1f,
+                    animationSpec = androidx.compose.animation.core.spring(
+                        dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
+                        stiffness = androidx.compose.animation.core.Spring.StiffnessLow
+                    )
+                )
+            }
+
+            when (decision) {
+                "YES" -> yesCount++
+                "NO" -> noCount++
+                else -> maybeCount++
+            }
+
+            viewModel.recordResult(
+                toolType = ToolType.YES_NO,
+                title = if (questionInput.isNotBlank()) "Q: $questionInput" else "Yes / No Decision",
+                result = decision,
+                details = if (includeMaybe) "Yes / No / Maybe Mode" else "Binary Yes / No"
+            )
         }
-
-        viewModel.recordResult(
-            toolType = ToolType.YES_NO,
-            title = if (questionInput.isNotBlank()) "Q: $questionInput" else "Yes / No Decision",
-            result = decision,
-            details = if (includeMaybe) "Yes / No / Maybe Mode" else "Binary Yes / No"
-        )
     }
 
     val accentColor = when (resultText) {
@@ -156,10 +197,17 @@ fun YesNoScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .widthIn(max = 520.dp)
+                        .graphicsLayer {
+                            rotationZ = shakeAngle.value
+                            translationX = shakeOffset.value
+                            scaleX = popScale.value
+                            scaleY = popScale.value
+                        }
                         .clip(RoundedCornerShape(24.dp))
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
+                            enabled = !isDeciding,
                             onClick = { decide() }
                         ),
                     shape = RoundedCornerShape(24.dp),
@@ -182,9 +230,10 @@ fun YesNoScreen(
                                 .background(accentColor.copy(alpha = 0.22f)),
                             contentAlignment = Alignment.Center
                         ) {
-                            val icon = when (resultText) {
-                                "YES" -> Icons.Default.CheckCircle
-                                "NO" -> Icons.Default.RemoveCircle
+                            val icon = when {
+                                isDeciding -> Icons.Default.HelpOutline
+                                resultText == "YES" -> Icons.Default.CheckCircle
+                                resultText == "NO" -> Icons.Default.RemoveCircle
                                 else -> Icons.Default.HelpOutline
                             }
                             Icon(
@@ -199,7 +248,7 @@ fun YesNoScreen(
 
                         // Large Decision Text
                         AnimatedContent(
-                            targetState = resultText ?: "DECIDE",
+                            targetState = if (isDeciding) "?" else (resultText ?: "DECIDE"),
                             transitionSpec = { fadeIn() togetherWith fadeOut() },
                             label = "decisionText"
                         ) { targetDecision ->
@@ -217,7 +266,11 @@ fun YesNoScreen(
 
                         Spacer(modifier = Modifier.height(6.dp))
 
-                        val questionDisplay = if (questionInput.isNotBlank()) "\"$questionInput\"" else "Tap stage or button to decide"
+                        val questionDisplay = when {
+                            isDeciding -> "Seeking answer..."
+                            questionInput.isNotBlank() -> "\"$questionInput\""
+                            else -> "Tap stage or button to decide"
+                        }
                         Text(
                             text = questionDisplay,
                             style = MaterialTheme.typography.bodyMedium,
@@ -234,6 +287,7 @@ fun YesNoScreen(
             item {
                 Button(
                     onClick = { decide() },
+                    enabled = !isDeciding,
                     modifier = Modifier
                         .fillMaxWidth()
                         .widthIn(max = 520.dp)
@@ -245,7 +299,7 @@ fun YesNoScreen(
                     Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(22.dp))
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "DECIDE NOW",
+                        text = if (isDeciding) "DECIDING..." else "DECIDE NOW",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,

@@ -1,6 +1,10 @@
 package com.example.ui.screens.tools
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -41,9 +45,11 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -55,6 +61,8 @@ import com.example.ui.viewmodel.RandomlyViewModel
 import com.example.util.HapticFeedbackUtil
 import com.example.util.RandomGenerators
 import com.example.util.ShareUtil
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -69,6 +77,7 @@ fun DateScreen(
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val settings by viewModel.settings.collectAsState()
     val isFavorite = viewModel.isToolFavorite(ToolType.DATE.id)
 
@@ -78,28 +87,64 @@ fun DateScreen(
 
     var selectedDateResult by remember { mutableStateOf<LocalDate?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var isGenerating by remember { mutableStateOf(false) }
+    val dateScale = remember { Animatable(1f) }
 
     val dateFormatter = remember { DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy") }
 
     fun generate() {
+        if (isGenerating) return
         errorMessage = null
-        val result = RandomGenerators.generateDate(startDate, endDate)
-        result.fold(
-            onSuccess = { date ->
-                selectedDateResult = date
-                HapticFeedbackUtil.performSuccess(context, settings.hapticsEnabled)
-                val formatted = date.format(dateFormatter)
-                viewModel.recordResult(
-                    toolType = ToolType.DATE,
-                    title = "Random Date",
-                    result = formatted,
-                    details = "Between $startDate and $endDate"
-                )
-            },
-            onFailure = { ex ->
-                errorMessage = ex.message ?: "Start date must be before end date"
+
+        val testCheck = RandomGenerators.generateDate(startDate, endDate)
+        if (testCheck.isFailure) {
+            errorMessage = testCheck.exceptionOrNull()?.message ?: "Start date must be before end date"
+            return
+        }
+
+        isGenerating = true
+        HapticFeedbackUtil.performImpact(context, settings.hapticsEnabled)
+
+        scope.launch {
+            if (settings.animationsEnabled) {
+                val cycleSteps = 8
+                for (step in 0 until cycleSteps) {
+                    RandomGenerators.generateDate(startDate, endDate).getOrNull()?.let { tempDate ->
+                        selectedDateResult = tempDate
+                    }
+                    HapticFeedbackUtil.performImpact(context, settings.hapticsEnabled)
+                    val delayMs = 35L + (step * 15L)
+                    kotlinx.coroutines.delay(delayMs)
+                }
             }
-        )
+
+            val finalResult = RandomGenerators.generateDate(startDate, endDate)
+            finalResult.fold(
+                onSuccess = { date ->
+                    selectedDateResult = date
+                    if (settings.animationsEnabled) {
+                        dateScale.snapTo(0.7f)
+                        dateScale.animateTo(
+                            1f,
+                            animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium)
+                        )
+                    }
+                    HapticFeedbackUtil.performSuccess(context, settings.hapticsEnabled)
+                    val formatted = date.format(dateFormatter)
+                    viewModel.recordResult(
+                        toolType = ToolType.DATE,
+                        title = "Random Date",
+                        result = formatted,
+                        details = "Between $startDate and $endDate"
+                    )
+                },
+                onFailure = { ex ->
+                    errorMessage = ex.message ?: "Start date must be before end date"
+                }
+            )
+
+            isGenerating = false
+        }
     }
 
     LaunchedEffect(Unit) {
@@ -140,19 +185,26 @@ fun DateScreen(
                 item {
                     val formatted = date.format(dateFormatter)
                     val dayOfWeek = date.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault())
-                    ResultDisplayCard(
-                        resultText = formatted,
-                        detailsText = "Day of week: $dayOfWeek",
-                        accentColor = ToolType.DATE.accentColor,
-                        onCopy = {
-                            ShareUtil.copyToClipboard(context, formatted)
-                            viewModel.showMessage("Copied date to clipboard")
-                        },
-                        onShare = {
-                            ShareUtil.shareText(context, "Random Date", formatted)
-                        },
-                        onRegenerate = { generate() }
-                    )
+                    Box(
+                        modifier = Modifier.graphicsLayer {
+                            scaleX = dateScale.value
+                            scaleY = dateScale.value
+                        }
+                    ) {
+                        ResultDisplayCard(
+                            resultText = formatted,
+                            detailsText = "Day of week: $dayOfWeek",
+                            accentColor = ToolType.DATE.accentColor,
+                            onCopy = {
+                                ShareUtil.copyToClipboard(context, formatted)
+                                viewModel.showMessage("Copied date to clipboard")
+                            },
+                            onShare = {
+                                ShareUtil.shareText(context, "Random Date", formatted)
+                            },
+                            onRegenerate = { generate() }
+                        )
+                    }
                 }
             }
 
@@ -213,6 +265,7 @@ fun DateScreen(
 
                         Button(
                             onClick = { generate() },
+                            enabled = !isGenerating,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(52.dp)
@@ -221,7 +274,10 @@ fun DateScreen(
                         ) {
                             Icon(Icons.Default.DateRange, contentDescription = null, modifier = Modifier.size(20.dp))
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Generate Random Date", style = MaterialTheme.typography.titleMedium)
+                            Text(
+                                if (isGenerating) "Flipping Calendar..." else "Generate Random Date",
+                                style = MaterialTheme.typography.titleMedium
+                            )
                         }
                     }
                 }

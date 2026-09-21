@@ -1,6 +1,10 @@
 package com.example.ui.screens.tools
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -33,9 +37,11 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -46,6 +52,8 @@ import com.example.ui.theme.AmberAccent
 import com.example.ui.viewmodel.RandomlyViewModel
 import com.example.util.HapticFeedbackUtil
 import com.example.util.ShareUtil
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.security.SecureRandom
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -55,26 +63,56 @@ fun LetterScreen(
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val settings by viewModel.settings.collectAsState()
     val isFavorite = viewModel.isToolFavorite(ToolType.LETTER.id)
 
     var uppercase by remember { mutableStateOf(true) }
     var letterCount by remember { mutableStateOf(1) }
     var currentResult by remember { mutableStateOf("A") }
+    var isGenerating by remember { mutableStateOf(false) }
+    val letterScale = remember { Animatable(1f) }
 
     fun generateLetter() {
+        if (isGenerating) return
+        isGenerating = true
         HapticFeedbackUtil.performImpact(context, settings.hapticsEnabled)
-        val alphabet = if (uppercase) "ABCDEFGHIJKLMNOPQRSTUVWXYZ" else "abcdefghijklmnopqrstuvwxyz"
-        val random = SecureRandom()
-        val result = (1..letterCount).map { alphabet[random.nextInt(alphabet.length)] }.joinToString(" ")
-        currentResult = result
 
-        viewModel.recordResult(
-            toolType = ToolType.LETTER,
-            title = "Random Letter",
-            result = result,
-            details = if (uppercase) "Uppercase (A-Z)" else "Lowercase (a-z)"
-        )
+        scope.launch {
+            val alphabet = if (uppercase) "ABCDEFGHIJKLMNOPQRSTUVWXYZ" else "abcdefghijklmnopqrstuvwxyz"
+            val random = SecureRandom()
+
+            if (settings.animationsEnabled) {
+                val cycleCount = 10
+                for (i in 0 until cycleCount) {
+                    currentResult = (1..letterCount).map { alphabet[random.nextInt(alphabet.length)] }.joinToString(" ")
+                    HapticFeedbackUtil.performImpact(context, settings.hapticsEnabled)
+                    val delayMs = 35L + (i * 15L)
+                    delay(delayMs)
+                }
+            }
+
+            val result = (1..letterCount).map { alphabet[random.nextInt(alphabet.length)] }.joinToString(" ")
+            currentResult = result
+
+            if (settings.animationsEnabled) {
+                letterScale.snapTo(0.65f)
+                letterScale.animateTo(
+                    1f,
+                    animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium)
+                )
+            }
+
+            HapticFeedbackUtil.performSuccess(context, settings.hapticsEnabled)
+            isGenerating = false
+
+            viewModel.recordResult(
+                toolType = ToolType.LETTER,
+                title = "Random Letter",
+                result = result,
+                details = if (uppercase) "Uppercase (A-Z)" else "Lowercase (a-z)"
+            )
+        }
     }
 
     Scaffold(
@@ -106,24 +144,32 @@ fun LetterScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
-                ResultDisplayCard(
-                    resultText = currentResult,
-                    detailsText = "$letterCount letter${if (letterCount > 1) "s" else ""} • ${if (uppercase) "Uppercase" else "Lowercase"}",
-                    accentColor = ToolType.LETTER.accentColor,
-                    onCopy = {
-                        ShareUtil.copyToClipboard(context, currentResult)
-                        viewModel.showMessage("Copied '$currentResult' to clipboard")
-                    },
-                    onShare = {
-                        ShareUtil.shareText(context, "Random Letter Result", currentResult)
-                    },
-                    onRegenerate = { generateLetter() }
-                )
+                Box(
+                    modifier = Modifier.graphicsLayer {
+                        scaleX = letterScale.value
+                        scaleY = letterScale.value
+                    }
+                ) {
+                    ResultDisplayCard(
+                        resultText = currentResult,
+                        detailsText = "$letterCount letter${if (letterCount > 1) "s" else ""} • ${if (uppercase) "Uppercase" else "Lowercase"}",
+                        accentColor = ToolType.LETTER.accentColor,
+                        onCopy = {
+                            ShareUtil.copyToClipboard(context, currentResult)
+                            viewModel.showMessage("Copied '$currentResult' to clipboard")
+                        },
+                        onShare = {
+                            ShareUtil.shareText(context, "Random Letter Result", currentResult)
+                        },
+                        onRegenerate = { generateLetter() }
+                    )
+                }
             }
 
             item {
                 Button(
                     onClick = { generateLetter() },
+                    enabled = !isGenerating,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(52.dp)
@@ -133,7 +179,11 @@ fun LetterScreen(
                 ) {
                     Icon(Icons.Default.Refresh, contentDescription = null)
                     Spacer(modifier = Modifier.padding(horizontal = 4.dp))
-                    Text("Generate Random Letter", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text(
+                        if (isGenerating) "Rolling Letters..." else "Generate Random Letter",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
 

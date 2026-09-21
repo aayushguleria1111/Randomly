@@ -24,7 +24,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -33,6 +36,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.testTag
@@ -41,6 +45,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.util.RandomGenerators.DiceType
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -51,15 +56,60 @@ fun AnimatedDiceView(
     modifier: Modifier = Modifier
 ) {
     val rotation = remember { Animatable(0f) }
-    val scale = remember { Animatable(1f) }
+    val bounceY = remember { Animatable(0f) }
+    val landingScale = remember { Animatable(1f) }
+    var displayRolls by remember { mutableStateOf(rolls) }
+
+    LaunchedEffect(rolls) {
+        if (!isRolling) {
+            displayRolls = rolls
+        }
+    }
 
     LaunchedEffect(isRolling) {
         if (isRolling) {
-            rotation.animateTo(
-                targetValue = 360f,
-                animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing)
+            // Spin and shake animation
+            val spinJob = launch {
+                rotation.snapTo(0f)
+                rotation.animateTo(
+                    targetValue = 720f,
+                    animationSpec = tween(durationMillis = 600, easing = FastOutSlowInEasing)
+                )
+            }
+            val bounceJob = launch {
+                bounceY.snapTo(0f)
+                // Jitter bounce up and down during roll
+                for (step in 1..6) {
+                    bounceY.animateTo(if (step % 2 == 1) -18f else 10f, tween(80))
+                }
+                bounceY.animateTo(0f, tween(120, easing = FastOutSlowInEasing))
+            }
+            val faceShuffleJob = launch {
+                val maxVal = diceType.sides
+                while (true) {
+                    displayRolls = List(rolls.size) { (1..maxVal).random() }
+                    kotlinx.coroutines.delay(65)
+                }
+            }
+            spinJob.join()
+            faceShuffleJob.cancel()
+            bounceJob.join()
+            displayRolls = rolls
+            
+            // Impact landing bounce
+            landingScale.snapTo(0.82f)
+            landingScale.animateTo(
+                targetValue = 1f,
+                animationSpec = androidx.compose.animation.core.spring(
+                    dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
+                    stiffness = androidx.compose.animation.core.Spring.StiffnessLow
+                )
             )
+        } else {
             rotation.snapTo(0f)
+            bounceY.snapTo(0f)
+            landingScale.snapTo(1f)
+            displayRolls = rolls
         }
     }
 
@@ -75,13 +125,21 @@ fun AnimatedDiceView(
             verticalArrangement = Arrangement.Center,
             maxItemsInEachRow = 5
         ) {
-            rolls.forEachIndexed { index, value ->
+            displayRolls.forEachIndexed { index, value ->
+                val direction = if (index % 2 == 0) 1f else -1f
+                val staggerOffset = (index % 3) * 6f
                 SingleDiceView(
                     diceType = diceType,
                     value = value,
                     modifier = Modifier
                         .padding(8.dp)
-                        .rotate(if (isRolling) rotation.value * ((index % 2) * 2 - 1) else 0f)
+                        .graphicsLayer {
+                            translationY = if (isRolling) bounceY.value + staggerOffset else 0f
+                            rotationZ = if (isRolling) (rotation.value * direction * 0.75f) % 360f else 0f
+                            scaleX = landingScale.value
+                            scaleY = landingScale.value
+                            cameraDistance = 12f * density
+                        }
                 )
             }
         }

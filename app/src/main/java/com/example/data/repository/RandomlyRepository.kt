@@ -8,6 +8,7 @@ import com.example.data.local.ToolPresetDao
 import com.example.data.local.ToolUsageDao
 import com.example.data.model.AppColorTheme
 import com.example.data.model.AppSettings
+import com.example.data.model.AppTextSize
 import com.example.data.model.AppThemeMode
 import com.example.data.model.FavoriteItem
 import com.example.data.model.HistoryItem
@@ -114,6 +115,14 @@ class RandomlyRepository(
 
     suspend fun setColorTheme(colorTheme: AppColorTheme) {
         dataStoreManager.setColorTheme(colorTheme)
+    }
+
+    suspend fun setTextSize(textSize: AppTextSize) {
+        dataStoreManager.setTextSize(textSize)
+    }
+
+    suspend fun setSoundEffectsEnabled(enabled: Boolean) {
+        dataStoreManager.setSoundEffectsEnabled(enabled)
     }
 
     suspend fun setHapticsEnabled(enabled: Boolean) {

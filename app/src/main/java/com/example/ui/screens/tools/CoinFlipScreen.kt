@@ -95,6 +95,7 @@ fun CoinFlipScreen(
     // Physical Toss state variables
     val tossOffsetY = remember { Animatable(0f) }
     val flipRotationX = remember { Animatable(0f) }
+    val tumbleY = remember { Animatable(0f) }
     val wobbleZ = remember { Animatable(0f) }
 
     // Session tallies
@@ -120,72 +121,93 @@ fun CoinFlipScreen(
                 while (diff < 0f) {
                     diff += 360f
                 }
-                // 6 complete end-over-end flips before reaching target face
-                val targetRot = currentRot + (6 * 360f) + diff
+                // 7 complete end-over-end flips before reaching target face
+                val targetRot = currentRot + (7 * 360f) + diff
 
                 // Run flight physics in parallel:
                 coroutineScope {
-                    // 1. Vertical parabolic flight arc + dampening ground bounce
+                    // 1. Authentic Vertical parabolic flight arc (Upward deceleration, downward gravity acceleration)
                     val flightJob = async {
-                        // High launch into the air (peak apex at -150dp)
+                        // High launch into the air (peak apex at -190dp) decelerating against gravity
                         tossOffsetY.animateTo(
-                            targetValue = -150f,
-                            animationSpec = tween(durationMillis = 520, easing = FastOutLinearInEasing)
+                            targetValue = -190f,
+                            animationSpec = tween(durationMillis = 480, easing = LinearOutSlowInEasing)
                         )
                         // Downward gravitational acceleration towards the surface
                         tossOffsetY.animateTo(
                             targetValue = 0f,
-                            animationSpec = tween(durationMillis = 460, easing = LinearOutSlowInEasing)
+                            animationSpec = tween(durationMillis = 440, easing = FastOutLinearInEasing)
                         )
                         HapticFeedbackUtil.performImpact(context, settings.hapticsEnabled)
-                        // First micro-bounce
+                        // First clatter bounce
                         tossOffsetY.animateTo(
-                            targetValue = -20f,
-                            animationSpec = tween(durationMillis = 130, easing = FastOutLinearInEasing)
+                            targetValue = -28f,
+                            animationSpec = tween(durationMillis = 110, easing = LinearOutSlowInEasing)
                         )
                         tossOffsetY.animateTo(
                             targetValue = 0f,
-                            animationSpec = tween(durationMillis = 120, easing = LinearOutSlowInEasing)
+                            animationSpec = tween(durationMillis = 100, easing = FastOutLinearInEasing)
                         )
-                        // Second subtle settle bounce
+                        // Second subtle settle micro-bounce
                         tossOffsetY.animateTo(
-                            targetValue = -5f,
-                            animationSpec = tween(durationMillis = 70, easing = FastOutLinearInEasing)
-                        )
-                        tossOffsetY.animateTo(
-                            targetValue = 0f,
+                            targetValue = -7f,
                             animationSpec = tween(durationMillis = 60, easing = LinearOutSlowInEasing)
+                        )
+                        tossOffsetY.animateTo(
+                            targetValue = 0f,
+                            animationSpec = tween(durationMillis = 50, easing = FastOutLinearInEasing)
                         )
                     }
 
-                    // 2. End-over-end 3D tumbling rotation
+                    // 2. End-over-end 3D tumbling rotation with natural deceleration
                     val rotationJob = async {
                         flipRotationX.animateTo(
                             targetValue = targetRot,
                             animationSpec = tween(
-                                durationMillis = 1260,
-                                easing = CubicBezierEasing(0.25f, 0.0f, 0.20f, 1.0f)
+                                durationMillis = 1240,
+                                easing = CubicBezierEasing(0.20f, 0.0f, 0.15f, 1.0f)
                             )
                         )
                     }
 
-                    // 3. Natural human toss wobble on Z axis
+                    // 3. Natural coin lateral tumble on Y axis
+                    val tumbleJob = async {
+                        tumbleY.animateTo(16f, tween(260))
+                        tumbleY.animateTo(-12f, tween(320))
+                        tumbleY.animateTo(6f, tween(320))
+                        tumbleY.animateTo(0f, tween(340))
+                    }
+
+                    // 4. Natural human toss wobble on Z axis
                     val wobbleJob = async {
-                        wobbleZ.animateTo(12f, tween(240))
-                        wobbleZ.animateTo(-9f, tween(300))
+                        wobbleZ.animateTo(14f, tween(240))
+                        wobbleZ.animateTo(-10f, tween(300))
                         wobbleZ.animateTo(5f, tween(320))
-                        wobbleZ.animateTo(0f, tween(400))
+                        wobbleZ.animateTo(0f, tween(380))
+                    }
+
+                    // 5. In-flight tumbling haptic pulse
+                    val hapticPulseJob = async {
+                        kotlinx.coroutines.delay(180)
+                        HapticFeedbackUtil.performImpact(context, settings.hapticsEnabled)
+                        kotlinx.coroutines.delay(220)
+                        HapticFeedbackUtil.performImpact(context, settings.hapticsEnabled)
+                        kotlinx.coroutines.delay(220)
+                        HapticFeedbackUtil.performImpact(context, settings.hapticsEnabled)
                     }
 
                     flightJob.await()
                     rotationJob.await()
+                    tumbleJob.await()
                     wobbleJob.await()
+                    hapticPulseJob.await()
                 }
             } else {
                 // Instant / reduced animation
                 val targetRot = if (outcome == "Heads") 0f else 180f
                 flipRotationX.snapTo(targetRot)
                 tossOffsetY.snapTo(0f)
+                tumbleY.snapTo(0f)
                 wobbleZ.snapTo(0f)
             }
 
@@ -237,6 +259,7 @@ fun CoinFlipScreen(
                 CoinTossStage(
                     tossOffsetY = tossOffsetY.value,
                     rotationX = flipRotationX.value,
+                    tumbleY = tumbleY.value,
                     wobbleZ = wobbleZ.value,
                     isFlipping = isFlipping,
                     resultText = resultText,
@@ -353,19 +376,20 @@ fun CoinFlipScreen(
 private fun CoinTossStage(
     tossOffsetY: Float,
     rotationX: Float,
+    tumbleY: Float,
     wobbleZ: Float,
     isFlipping: Boolean,
     resultText: String,
     onCoinTossed: () -> Unit
 ) {
     // Ground shadow scales and diffuses based on altitude
-    val altitudeFraction = (-tossOffsetY / 150f).coerceIn(0f, 1f)
-    val shadowWidth = (140 - 75 * altitudeFraction).dp
-    val shadowHeight = (22 - 12 * altitudeFraction).dp
-    val shadowAlpha = (0.35f - 0.25f * altitudeFraction).coerceAtLeast(0.06f)
+    val altitudeFraction = (-tossOffsetY / 190f).coerceIn(0f, 1f)
+    val shadowWidth = (150 - 95 * altitudeFraction).dp
+    val shadowHeight = (24 - 16 * altitudeFraction).dp
+    val shadowAlpha = (0.42f - 0.34f * altitudeFraction).coerceAtLeast(0.05f)
 
-    // Perspective foreshortening: coin grows slightly as it flies towards camera
-    val perspectiveScale = 1.0f + (0.12f * altitudeFraction)
+    // Perspective foreshortening: coin grows dramatically as it arches toward camera
+    val perspectiveScale = 1.0f + (0.35f * altitudeFraction)
 
     Card(
         modifier = Modifier
@@ -442,6 +466,7 @@ private fun CoinTossStage(
                     .graphicsLayer {
                         this.translationY = tossOffsetY
                         this.rotationX = rotationX
+                        this.rotationY = tumbleY
                         this.rotationZ = wobbleZ
                         this.scaleX = perspectiveScale
                         this.scaleY = perspectiveScale

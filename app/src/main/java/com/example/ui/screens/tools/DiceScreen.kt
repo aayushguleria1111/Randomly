@@ -93,7 +93,12 @@ fun DiceScreen(
         scope.launch {
             HapticFeedbackUtil.performImpact(context, settings.hapticsEnabled)
             if (settings.animationsEnabled) {
-                delay(300)
+                // Rhythmic tumble haptics
+                for (i in 1..4) {
+                    delay(130)
+                    HapticFeedbackUtil.performImpact(context, settings.hapticsEnabled)
+                }
+                delay(130)
             }
             val result = RandomGenerators.rollDice(selectedDiceType, diceCount, modifierValue)
             rollResult = result
@@ -276,6 +281,7 @@ fun DiceScreen(
 
                         Button(
                             onClick = { roll() },
+                            enabled = !isRolling,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .heightIn(min = 48.dp, max = 52.dp)
@@ -286,7 +292,7 @@ fun DiceScreen(
                             Icon(Icons.Default.Casino, contentDescription = null, modifier = Modifier.size(20.dp))
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                "ROLL DICE",
+                                if (isRolling) "ROLLING..." else "ROLL DICE",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 maxLines = 1,

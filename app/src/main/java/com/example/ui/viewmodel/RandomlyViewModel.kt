@@ -12,6 +12,7 @@ import com.example.data.local.AppDatabase
 import com.example.data.local.DataStoreManager
 import com.example.data.model.AppColorTheme
 import com.example.data.model.AppSettings
+import com.example.data.model.AppTextSize
 import com.example.data.model.AppThemeMode
 import com.example.data.model.FavoriteItem
 import com.example.data.model.HistoryItem
@@ -20,6 +21,7 @@ import com.example.data.model.ToolPreset
 import com.example.data.model.ToolType
 import com.example.data.model.ToolUsage
 import com.example.data.repository.RandomlyRepository
+import com.example.util.AudioHapticFeedback
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -80,8 +82,16 @@ class RandomlyViewModel(
     }
 
     fun toggleFavorite(tool: ToolType) {
+        val isFav = favorites.value.any { it.toolId == tool.id }
+        val currentSettings = settings.value
+        val context = getApplication<Application>()
+        AudioHapticFeedback.onFavorite(
+            context = context,
+            isFavoriteNow = !isFav,
+            soundEnabled = currentSettings.soundEffectsEnabled,
+            hapticsEnabled = currentSettings.hapticsEnabled
+        )
         viewModelScope.launch {
-            val isFav = favorites.value.any { it.toolId == tool.id }
             repository.toggleFavorite(tool.id, isFav)
             val msg = if (isFav) "Removed ${tool.title} from favorites" else "Added ${tool.title} to favorites"
             _snackbarMessage.emit(msg)
@@ -164,6 +174,18 @@ class RandomlyViewModel(
     fun setColorTheme(colorTheme: AppColorTheme) {
         viewModelScope.launch {
             repository.setColorTheme(colorTheme)
+        }
+    }
+
+    fun setTextSize(textSize: AppTextSize) {
+        viewModelScope.launch {
+            repository.setTextSize(textSize)
+        }
+    }
+
+    fun setSoundEffectsEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            repository.setSoundEffectsEnabled(enabled)
         }
     }
 

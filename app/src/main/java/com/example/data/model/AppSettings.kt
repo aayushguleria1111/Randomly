@@ -22,9 +22,22 @@ enum class AppColorTheme(
     ROSE("Neon Rose", Color(0xFFF43F5E), Color(0xFFE11D48))
 }
 
+enum class AppTextSize(
+    val displayName: String,
+    val scaleMultiplier: Float,
+    val description: String
+) {
+    SMALL("Small", 0.85f, "Compact text for higher content density"),
+    SMALL_MEDIUM("Small-Medium", 0.94f, "Default balanced text size"),
+    MEDIUM("Medium", 1.05f, "Slightly enlarged text for comfortable reading"),
+    LARGE("Large", 1.18f, "Larger text for maximum readability")
+}
+
 data class AppSettings(
     val themeMode: AppThemeMode = AppThemeMode.SYSTEM,
     val colorTheme: AppColorTheme = AppColorTheme.INDIGO,
+    val textSize: AppTextSize = AppTextSize.SMALL_MEDIUM,
+    val soundEffectsEnabled: Boolean = true,
     val hapticsEnabled: Boolean = true,
     val animationsEnabled: Boolean = true,
     val saveHistoryEnabled: Boolean = true,

@@ -33,7 +33,8 @@ class MainActivity : ComponentActivity() {
 
             RandomlyTheme(
                 themeMode = settings.themeMode,
-                colorTheme = settings.colorTheme
+                colorTheme = settings.colorTheme,
+                textSize = settings.textSize
             ) {
                 Box(modifier = Modifier.fillMaxSize()) {
                     RandomlyNavGraph(viewModel = viewModel)

@@ -70,6 +70,7 @@ import com.example.ui.components.SectionHeader
 import com.example.ui.components.ToolCard
 import com.example.ui.theme.AmberAccent
 import com.example.ui.viewmodel.RandomlyViewModel
+import com.example.util.AudioHapticFeedback
 import com.example.util.HapticFeedbackUtil
 import kotlinx.coroutines.launch
 import java.security.SecureRandom
@@ -118,7 +119,7 @@ fun HomeScreen(
 
     fun handleSurpriseMe() {
         scope.launch {
-            HapticFeedbackUtil.performImpact(context, settings.hapticsEnabled)
+            AudioHapticFeedback.onToolUse(context, settings.soundEffectsEnabled, settings.hapticsEnabled)
             rotateAnimation.animateTo(
                 targetValue = rotateAnimation.value + 360f,
                 animationSpec = tween(500)
@@ -330,6 +331,7 @@ fun HomeScreen(
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .clickable {
+                                                AudioHapticFeedback.onToolClick(context, settings.soundEffectsEnabled, settings.hapticsEnabled)
                                                 viewModel.recordToolOpen(tool.id)
                                                 onNavigateToTool(tool)
                                             },
@@ -456,7 +458,10 @@ fun HomeScreen(
                             item {
                                 FilterChip(
                                     selected = selectedCategory == null,
-                                    onClick = { selectedCategory = null },
+                                    onClick = {
+                                        AudioHapticFeedback.onSettingChange(context, settings.soundEffectsEnabled, settings.hapticsEnabled)
+                                        selectedCategory = null
+                                    },
                                     label = { Text("All Categories") }
                                 )
                             }
@@ -464,6 +469,7 @@ fun HomeScreen(
                                 FilterChip(
                                     selected = selectedCategory == category,
                                     onClick = {
+                                        AudioHapticFeedback.onSettingChange(context, settings.soundEffectsEnabled, settings.hapticsEnabled)
                                         selectedCategory = if (selectedCategory == category) null else category
                                     },
                                     label = { Text(category.title) }
@@ -483,6 +489,7 @@ fun HomeScreen(
                         description = "Try searching for another keyword or clearing your filter.",
                         actionLabel = "Clear Search",
                         onActionClick = {
+                            AudioHapticFeedback.onAction(context, settings.soundEffectsEnabled, settings.hapticsEnabled)
                             searchQuery = ""
                             selectedCategory = null
                         }

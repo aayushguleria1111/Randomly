@@ -65,6 +65,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -79,6 +80,8 @@ import com.example.ui.theme.AmberAccent
 import com.example.ui.viewmodel.RandomlyViewModel
 import com.example.util.HapticFeedbackUtil
 import com.example.util.ShareUtil
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.security.SecureRandom
 
 private const val MAX_OPTION_LENGTH = 25
@@ -116,27 +119,61 @@ fun ChoiceScreen(
 
     var newOptionInput by remember { mutableStateOf("") }
     var selectedWinner by remember { mutableStateOf<String?>(null) }
+    var cyclingIndex by remember { mutableStateOf<Int?>(-1) }
+    var isShuffling by remember { mutableStateOf(false) }
+
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    val popScale = remember { androidx.compose.animation.core.Animatable(1f) }
 
     var showSavePresetDialog by remember { mutableStateOf(false) }
     var newPresetNameInput by remember { mutableStateOf("") }
     var presetToDelete by remember { mutableStateOf<ToolPreset?>(null) }
 
     fun pickWinner() {
-        if (options.isEmpty()) return
-        HapticFeedbackUtil.performImpact(context, settings.hapticsEnabled)
+        if (options.isEmpty() || isShuffling) return
+        isShuffling = true
 
-        val random = SecureRandom()
-        val winner = options[random.nextInt(options.size)]
-        selectedWinner = winner
+        scope.launch {
+            val random = SecureRandom()
+            var winnerIndex = random.nextInt(options.size)
 
-        HapticFeedbackUtil.performSuccess(context, settings.hapticsEnabled)
+            if (settings.animationsEnabled && options.size > 1) {
+                // Roulette ticker animation: accelerates then decelerates
+                val delays = listOf(50L, 50L, 60L, 70L, 80L, 100L, 130L, 170L, 220L, 280L)
+                var currentIndex = if (cyclingIndex != null && cyclingIndex!! >= 0) cyclingIndex!! else 0
+                for (d in delays) {
+                    currentIndex = (currentIndex + 1) % options.size
+                    cyclingIndex = currentIndex
+                    HapticFeedbackUtil.performImpact(context, settings.hapticsEnabled)
+                    kotlinx.coroutines.delay(d)
+                }
+                winnerIndex = currentIndex
+            }
 
-        viewModel.recordResult(
-            toolType = ToolType.CHOICE,
-            title = "Random Choice",
-            result = winner,
-            details = "Chosen from ${options.size} options"
-        )
+            val winner = options[winnerIndex]
+            selectedWinner = winner
+            cyclingIndex = winnerIndex
+            isShuffling = false
+            HapticFeedbackUtil.performSuccess(context, settings.hapticsEnabled)
+
+            if (settings.animationsEnabled) {
+                popScale.snapTo(0.75f)
+                popScale.animateTo(
+                    targetValue = 1f,
+                    animationSpec = androidx.compose.animation.core.spring(
+                        dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
+                        stiffness = androidx.compose.animation.core.Spring.StiffnessLow
+                    )
+                )
+            }
+
+            viewModel.recordResult(
+                toolType = ToolType.CHOICE,
+                title = "Random Choice",
+                result = winner,
+                details = "Chosen from ${options.size} options"
+            )
+        }
     }
 
     Scaffold(
@@ -175,11 +212,15 @@ fun ChoiceScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .widthIn(max = 520.dp)
+                        .graphicsLayer {
+                            scaleX = popScale.value
+                            scaleY = popScale.value
+                        }
                         .clip(RoundedCornerShape(24.dp))
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
-                            enabled = options.isNotEmpty(),
+                            enabled = options.isNotEmpty() && !isShuffling,
                             onClick = { pickWinner() }
                         ),
                     shape = RoundedCornerShape(24.dp),
@@ -211,8 +252,14 @@ fun ChoiceScreen(
 
                         Spacer(modifier = Modifier.height(12.dp))
 
+                        val displayTarget = if (isShuffling && cyclingIndex != null && cyclingIndex!! in options.indices) {
+                            options[cyclingIndex!!]
+                        } else {
+                            selectedWinner ?: "Tap to Decide"
+                        }
+
                         AnimatedContent(
-                            targetState = selectedWinner ?: "Tap to Decide",
+                            targetState = displayTarget,
                             transitionSpec = { fadeIn() togetherWith fadeOut() },
                             label = "choiceWinner"
                         ) { displayChoice ->
@@ -232,7 +279,7 @@ fun ChoiceScreen(
                         Spacer(modifier = Modifier.height(6.dp))
 
                         Text(
-                            text = if (selectedWinner != null) "Selected from ${options.size} options" else "Tap stage or button to choose from list",
+                            text = if (isShuffling) "Selecting..." else if (selectedWinner != null) "Selected from ${options.size} options" else "Tap stage or button to choose from list",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -244,7 +291,7 @@ fun ChoiceScreen(
             item {
                 Button(
                     onClick = { pickWinner() },
-                    enabled = options.isNotEmpty(),
+                    enabled = options.isNotEmpty() && !isShuffling,
                     modifier = Modifier
                         .fillMaxWidth()
                         .widthIn(max = 520.dp)
@@ -256,7 +303,7 @@ fun ChoiceScreen(
                     Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(22.dp))
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "DECIDE FOR ME",
+                        text = if (isShuffling) "PICKING..." else "DECIDE FOR ME",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
@@ -422,14 +469,16 @@ fun ChoiceScreen(
 
             // Options List
             itemsIndexed(options) { index, option ->
+                val isCurrentHighlight = cyclingIndex == index
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
                         .widthIn(max = 520.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
-                    )
+                        containerColor = if (isCurrentHighlight) ToolType.CHOICE.accentColor.copy(alpha = 0.22f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+                    ),
+                    border = if (isCurrentHighlight) BorderStroke(2.dp, ToolType.CHOICE.accentColor) else null
                 ) {
                     Row(
                         modifier = Modifier
@@ -441,15 +490,19 @@ fun ChoiceScreen(
                         Text(
                             text = "${index + 1}. $option",
                             style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Medium,
+                            fontWeight = if (isCurrentHighlight) FontWeight.Bold else FontWeight.Medium,
+                            color = if (isCurrentHighlight) ToolType.CHOICE.accentColor else MaterialTheme.colorScheme.onSurface,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f)
                         )
-                        IconButton(onClick = {
-                            options.removeAt(index)
-                            persistCurrentOptions()
-                        }) {
+                        IconButton(
+                            enabled = !isShuffling,
+                            onClick = {
+                                options.removeAt(index)
+                                persistCurrentOptions()
+                            }
+                        ) {
                             Icon(
                                 Icons.Default.Delete,
                                 contentDescription = "Delete",

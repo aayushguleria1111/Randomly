@@ -1,6 +1,10 @@
 package com.example.ui.screens.tools
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -34,9 +38,11 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -48,6 +54,8 @@ import com.example.ui.viewmodel.RandomlyViewModel
 import com.example.util.HapticFeedbackUtil
 import com.example.util.RandomGenerators
 import com.example.util.ShareUtil
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
@@ -58,6 +66,7 @@ fun TimeScreen(
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val settings by viewModel.settings.collectAsState()
     val isFavorite = viewModel.isToolFavorite(ToolType.TIME.id)
 
@@ -65,6 +74,8 @@ fun TimeScreen(
     var use24HourFormat by remember { mutableStateOf(false) }
 
     var selectedTimeResult by remember { mutableStateOf<LocalTime?>(null) }
+    var isGenerating by remember { mutableStateOf(false) }
+    val timeScale = remember { Animatable(1f) }
 
     val timeFormatter = remember(includeSeconds, use24HourFormat) {
         val pattern = when {
@@ -77,19 +88,48 @@ fun TimeScreen(
     }
 
     fun generate() {
-        val time = RandomGenerators.generateTime(
-            includeSeconds = includeSeconds,
-            format24Hour = use24HourFormat
-        )
-        selectedTimeResult = time
-        HapticFeedbackUtil.performSuccess(context, settings.hapticsEnabled)
-        val formatted = time.format(timeFormatter)
-        viewModel.recordResult(
-            toolType = ToolType.TIME,
-            title = "Random Time",
-            result = formatted,
-            details = if (use24HourFormat) "24-Hour Format" else "12-Hour Format (AM/PM)"
-        )
+        if (isGenerating) return
+        isGenerating = true
+        HapticFeedbackUtil.performImpact(context, settings.hapticsEnabled)
+
+        scope.launch {
+            if (settings.animationsEnabled) {
+                val cycleSteps = 8
+                for (step in 0 until cycleSteps) {
+                    selectedTimeResult = RandomGenerators.generateTime(
+                        includeSeconds = includeSeconds,
+                        format24Hour = use24HourFormat
+                    )
+                    HapticFeedbackUtil.performImpact(context, settings.hapticsEnabled)
+                    val delayMs = 30L + (step * 15L)
+                    delay(delayMs)
+                }
+            }
+
+            val time = RandomGenerators.generateTime(
+                includeSeconds = includeSeconds,
+                format24Hour = use24HourFormat
+            )
+            selectedTimeResult = time
+
+            if (settings.animationsEnabled) {
+                timeScale.snapTo(0.7f)
+                timeScale.animateTo(
+                    1f,
+                    animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium)
+                )
+            }
+
+            HapticFeedbackUtil.performSuccess(context, settings.hapticsEnabled)
+            val formatted = time.format(timeFormatter)
+            viewModel.recordResult(
+                toolType = ToolType.TIME,
+                title = "Random Time",
+                result = formatted,
+                details = if (use24HourFormat) "24-Hour Format" else "12-Hour Format (AM/PM)"
+            )
+            isGenerating = false
+        }
     }
 
     LaunchedEffect(Unit) {
@@ -129,19 +169,26 @@ fun TimeScreen(
             selectedTimeResult?.let { time ->
                 item {
                     val formatted = time.format(timeFormatter)
-                    ResultDisplayCard(
-                        resultText = formatted,
-                        detailsText = if (use24HourFormat) "24-hour military format" else "Standard 12-hour format",
-                        accentColor = ToolType.TIME.accentColor,
-                        onCopy = {
-                            ShareUtil.copyToClipboard(context, formatted)
-                            viewModel.showMessage("Copied time to clipboard")
-                        },
-                        onShare = {
-                            ShareUtil.shareText(context, "Random Time", formatted)
-                        },
-                        onRegenerate = { generate() }
-                    )
+                    Box(
+                        modifier = Modifier.graphicsLayer {
+                            scaleX = timeScale.value
+                            scaleY = timeScale.value
+                        }
+                    ) {
+                        ResultDisplayCard(
+                            resultText = formatted,
+                            detailsText = if (use24HourFormat) "24-hour military format" else "Standard 12-hour format",
+                            accentColor = ToolType.TIME.accentColor,
+                            onCopy = {
+                                ShareUtil.copyToClipboard(context, formatted)
+                                viewModel.showMessage("Copied time to clipboard")
+                            },
+                            onShare = {
+                                ShareUtil.shareText(context, "Random Time", formatted)
+                            },
+                            onRegenerate = { generate() }
+                        )
+                    }
                 }
             }
 
@@ -187,6 +234,7 @@ fun TimeScreen(
 
                         Button(
                             onClick = { generate() },
+                            enabled = !isGenerating,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(52.dp)
@@ -195,7 +243,10 @@ fun TimeScreen(
                         ) {
                             Icon(Icons.Default.AccessTime, contentDescription = null, modifier = Modifier.size(20.dp))
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Generate Random Time", style = MaterialTheme.typography.titleMedium)
+                            Text(
+                                if (isGenerating) "Spinning Clock..." else "Generate Random Time",
+                                style = MaterialTheme.typography.titleMedium
+                            )
                         }
                     }
                 }
