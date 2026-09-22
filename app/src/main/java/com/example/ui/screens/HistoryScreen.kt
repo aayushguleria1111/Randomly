@@ -45,9 +45,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.R
 import com.example.data.model.ToolType
 import com.example.ui.components.EmptyStateView
 import com.example.ui.viewmodel.RandomlyViewModel
@@ -110,9 +113,9 @@ fun HistoryScreen(
                 modifier = modifier
                     .fillMaxSize()
                     .padding(innerPadding)
-                    .padding(horizontal = 16.dp),
-                contentPadding = PaddingValues(vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                    .padding(horizontal = 12.dp),
+                contentPadding = PaddingValues(vertical = 10.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 // Filter chips
                 item {
@@ -162,12 +165,28 @@ fun HistoryScreen(
                                     .background(accent.copy(alpha = 0.15f)),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Icon(
-                                    imageVector = icon,
-                                    contentDescription = null,
-                                    tint = accent,
-                                    modifier = Modifier.size(22.dp)
-                                )
+                                if (tool == ToolType.SPIN_WHEEL) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.ic_spin_wheel_logo),
+                                        contentDescription = null,
+                                        tint = Color.Unspecified,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                } else if (tool == ToolType.SPIN_BOTTLE) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.ic_bottle_3d),
+                                        contentDescription = null,
+                                        tint = Color.Unspecified,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                } else {
+                                    Icon(
+                                        imageVector = icon,
+                                        contentDescription = null,
+                                        tint = accent,
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                }
                             }
 
                             Spacer(modifier = Modifier.width(12.dp))

@@ -21,14 +21,19 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.example.R
 import com.example.data.model.ToolType
 import com.example.ui.theme.AmberAccent
 
@@ -66,23 +71,58 @@ fun ToolCard(
                         .background(tool.accentColor.copy(alpha = 0.15f)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = tool.icon,
-                        contentDescription = null,
-                        tint = tool.accentColor,
-                        modifier = Modifier.size(24.dp)
-                    )
+                    if (tool == ToolType.SPIN_WHEEL) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_spin_wheel_logo),
+                            contentDescription = null,
+                            tint = Color.Unspecified,
+                            modifier = Modifier.size(26.dp)
+                        )
+                    } else if (tool == ToolType.SPIN_BOTTLE) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_bottle_3d),
+                            contentDescription = null,
+                            tint = Color.Unspecified,
+                            modifier = Modifier.size(28.dp)
+                        )
+                    } else {
+                        Icon(
+                            imageVector = tool.icon,
+                            contentDescription = null,
+                            tint = tool.accentColor,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.width(12.dp))
 
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = tool.title,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = tool.title,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            modifier = Modifier.weight(1f, fill = false)
+                        )
+                        if (tool.isNew) {
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = Color(0xFFEF4444),
+                                contentColor = Color.White
+                            ) {
+                                Text(
+                                    text = "NEW",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    fontSize = 9.sp,
+                                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.5.dp)
+                                )
+                            }
+                        }
+                    }
                     Text(
                         text = tool.subtitle,
                         style = MaterialTheme.typography.bodySmall,
@@ -117,12 +157,28 @@ fun ToolCard(
                             .background(tool.accentColor.copy(alpha = 0.15f)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            imageVector = tool.icon,
-                            contentDescription = null,
-                            tint = tool.accentColor,
-                            modifier = Modifier.size(26.dp)
-                        )
+                        if (tool == ToolType.SPIN_WHEEL) {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_spin_wheel_logo),
+                                contentDescription = null,
+                                tint = Color.Unspecified,
+                                modifier = Modifier.size(30.dp)
+                            )
+                        } else if (tool == ToolType.SPIN_BOTTLE) {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_bottle_3d),
+                                contentDescription = null,
+                                tint = Color.Unspecified,
+                                modifier = Modifier.size(30.dp)
+                            )
+                        } else {
+                            Icon(
+                                imageVector = tool.icon,
+                                contentDescription = null,
+                                tint = tool.accentColor,
+                                modifier = Modifier.size(26.dp)
+                            )
+                        }
                     }
 
                     IconButton(
@@ -140,12 +196,34 @@ fun ToolCard(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                Text(
-                    text = tool.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = tool.title,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        modifier = Modifier.weight(1f, fill = false)
+                    )
+                    if (tool.isNew) {
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = Color(0xFFEF4444),
+                            contentColor = Color.White
+                        ) {
+                            Text(
+                                text = "NEW",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.ExtraBold,
+                                fontSize = 9.sp,
+                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.5.dp)
+                            )
+                        }
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(2.dp))
 

@@ -6,6 +6,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -132,12 +133,6 @@ fun TimeScreen(
         }
     }
 
-    LaunchedEffect(Unit) {
-        if (selectedTimeResult == null) {
-            generate()
-        }
-    }
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -163,32 +158,40 @@ fun TimeScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(horizontal = 12.dp),
+            contentPadding = PaddingValues(vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            selectedTimeResult?.let { time ->
-                item {
-                    val formatted = time.format(timeFormatter)
-                    Box(
-                        modifier = Modifier.graphicsLayer {
-                            scaleX = timeScale.value
-                            scaleY = timeScale.value
-                        }
-                    ) {
-                        ResultDisplayCard(
-                            resultText = formatted,
-                            detailsText = if (use24HourFormat) "24-hour military format" else "Standard 12-hour format",
-                            accentColor = ToolType.TIME.accentColor,
-                            onCopy = {
+            item {
+                val hasTime = selectedTimeResult != null
+                val formatted = selectedTimeResult?.format(timeFormatter) ?: "--:--"
+                Box(
+                    modifier = Modifier.graphicsLayer {
+                        scaleX = timeScale.value
+                        scaleY = timeScale.value
+                    }
+                ) {
+                    ResultDisplayCard(
+                        resultText = formatted,
+                        detailsText = if (hasTime) {
+                            if (use24HourFormat) "24-hour military format" else "Standard 12-hour format"
+                        } else {
+                            "Tap Generate Time to pick a random time"
+                        },
+                        accentColor = ToolType.TIME.accentColor,
+                        onCopy = {
+                            if (hasTime) {
                                 ShareUtil.copyToClipboard(context, formatted)
                                 viewModel.showMessage("Copied time to clipboard")
-                            },
-                            onShare = {
+                            }
+                        },
+                        onShare = {
+                            if (hasTime) {
                                 ShareUtil.shareText(context, "Random Time", formatted)
-                            },
-                            onRegenerate = { generate() }
-                        )
-                    }
+                            }
+                        },
+                        onRegenerate = { generate() }
+                    )
                 }
             }
 
@@ -212,7 +215,7 @@ fun TimeScreen(
                             Text("24-Hour Clock (e.g. 23:45)", style = MaterialTheme.typography.bodyMedium)
                             Switch(
                                 checked = use24HourFormat,
-                                onCheckedChange = { use24HourFormat = it; generate() }
+                                onCheckedChange = { use24HourFormat = it }
                             )
                         }
 
@@ -226,7 +229,7 @@ fun TimeScreen(
                             Text("Include Seconds (e.g. :30)", style = MaterialTheme.typography.bodyMedium)
                             Switch(
                                 checked = includeSeconds,
-                                onCheckedChange = { includeSeconds = it; generate() }
+                                onCheckedChange = { includeSeconds = it }
                             )
                         }
 

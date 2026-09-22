@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -106,12 +107,6 @@ fun CardScreen(
         }
     }
 
-    LaunchedEffect(Unit) {
-        if (drawnCards.isEmpty()) {
-            draw()
-        }
-    }
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -137,8 +132,9 @@ fun CardScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(horizontal = 12.dp),
+            contentPadding = PaddingValues(vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             // Drawn Cards Display
             if (drawnCards.isNotEmpty()) {
@@ -178,6 +174,17 @@ fun CardScreen(
                         onRegenerate = { draw() }
                     )
                 }
+            } else {
+                item {
+                    ResultDisplayCard(
+                        resultText = "🂠",
+                        detailsText = "Tap Draw Cards to deal $cardCount card${if (cardCount > 1) "s" else ""}",
+                        accentColor = ToolType.CARD.accentColor,
+                        onCopy = {},
+                        onShare = {},
+                        onRegenerate = { draw() }
+                    )
+                }
             }
 
             // Controls
@@ -196,7 +203,6 @@ fun CardScreen(
                                     selected = cardCount == count,
                                     onClick = {
                                         cardCount = count
-                                        draw()
                                     },
                                     label = { Text("$count Card${if (count > 1) "s" else ""}") }
                                 )
@@ -216,7 +222,7 @@ fun CardScreen(
                             }
                             Switch(
                                 checked = allowDuplicates,
-                                onCheckedChange = { allowDuplicates = it; draw() }
+                                onCheckedChange = { allowDuplicates = it }
                             )
                         }
 

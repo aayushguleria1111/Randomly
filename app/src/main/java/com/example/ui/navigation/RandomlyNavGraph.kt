@@ -1,5 +1,6 @@
 package com.example.ui.navigation
 
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
@@ -36,6 +37,7 @@ import com.example.ui.screens.tools.DiceScreen
 import com.example.ui.screens.tools.LetterScreen
 import com.example.ui.screens.tools.ListPickerScreen
 import com.example.ui.screens.tools.NumberScreen
+import com.example.ui.screens.tools.SpinBottleScreen
 import com.example.ui.screens.tools.StringGeneratorScreen
 import com.example.ui.screens.tools.TimeScreen
 import com.example.ui.screens.tools.WheelScreen
@@ -65,6 +67,7 @@ fun RandomlyNavGraph(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             if (isTopLevelDestination) {
@@ -101,7 +104,7 @@ fun RandomlyNavGraph(
         NavHost(
             navController = navController,
             startDestination = Screen.Home.route,
-            modifier = Modifier.padding(innerPadding)
+            modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding())
         ) {
             // Tab destinations
             composable(Screen.Home.route) {
@@ -123,6 +126,7 @@ fun RandomlyNavGraph(
                             ToolType.CARD -> Screen.Card.route
                             ToolType.YES_NO -> Screen.YesNo.route
                             ToolType.CHOICE -> Screen.Choice.route
+                            ToolType.SPIN_BOTTLE -> Screen.Bottle.route
                         }
                         navController.navigate(targetRoute)
                     }
@@ -148,6 +152,7 @@ fun RandomlyNavGraph(
                             ToolType.CARD -> Screen.Card.route
                             ToolType.YES_NO -> Screen.YesNo.route
                             ToolType.CHOICE -> Screen.Choice.route
+                            ToolType.SPIN_BOTTLE -> Screen.Bottle.route
                         }
                         navController.navigate(targetRoute)
                     },
@@ -219,6 +224,9 @@ fun RandomlyNavGraph(
             }
             composable(Screen.Choice.route) {
                 ChoiceScreen(viewModel = viewModel, onBack = { navController.popBackStack() })
+            }
+            composable(Screen.Bottle.route) {
+                SpinBottleScreen(viewModel = viewModel, onBack = { navController.popBackStack() })
             }
         }
     }

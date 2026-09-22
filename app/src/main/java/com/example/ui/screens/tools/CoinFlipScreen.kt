@@ -14,6 +14,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -90,6 +91,7 @@ fun CoinFlipScreen(
     val isFavorite = viewModel.isToolFavorite(ToolType.COIN_FLIP.id)
 
     var resultText by remember { mutableStateOf("Heads") }
+    var hasFlipped by remember { mutableStateOf(false) }
     var isFlipping by remember { mutableStateOf(false) }
 
     // Physical Toss state variables
@@ -212,6 +214,7 @@ fun CoinFlipScreen(
             }
 
             resultText = outcome
+            hasFlipped = true
             if (outcome == "Heads") headsCount++ else tailsCount++
             isFlipping = false
             HapticFeedbackUtil.performSuccess(context, settings.hapticsEnabled)
@@ -249,8 +252,9 @@ fun CoinFlipScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+                .padding(horizontal = 12.dp),
+            contentPadding = PaddingValues(vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Interactive 3D Coin Toss Stage
@@ -349,15 +353,19 @@ fun CoinFlipScreen(
             item {
                 Box(modifier = Modifier.fillMaxWidth().widthIn(max = 520.dp)) {
                     ResultDisplayCard(
-                        resultText = resultText,
-                        detailsText = "Fair 50/50 probability",
+                        resultText = if (hasFlipped) resultText else "Ready",
+                        detailsText = if (hasFlipped) "Fair 50/50 probability" else "Tap TOSS COIN to flip",
                         accentColor = ToolType.COIN_FLIP.accentColor,
                         onCopy = {
-                            ShareUtil.copyToClipboard(context, resultText)
-                            viewModel.showMessage("Copied '$resultText' to clipboard")
+                            if (hasFlipped) {
+                                ShareUtil.copyToClipboard(context, resultText)
+                                viewModel.showMessage("Copied '$resultText' to clipboard")
+                            }
                         },
                         onShare = {
-                            ShareUtil.shareText(context, "Coin Flip Result", resultText)
+                            if (hasFlipped) {
+                                ShareUtil.shareText(context, "Coin Flip Result", resultText)
+                            }
                         },
                         onRegenerate = { flipCoin() }
                     )

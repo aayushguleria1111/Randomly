@@ -98,24 +98,11 @@ fun StartupAnimationOverlay(
                         .alpha(contentAlpha.value)
                         .padding(horizontal = 24.dp)
                 ) {
-                    // Two Dice Logo Card with soft glowing badge
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier.size(140.dp)
-                    ) {
-                        // Ambient halo
-                        Box(
-                            modifier = Modifier
-                                .size(130.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f))
-                        )
-
-                        TwoDiceLogo(
-                            size = 110.dp,
-                            animated = true
-                        )
-                    }
+                    // App Logo with glowing ambient aura
+                    AppLogo(
+                        size = 110.dp,
+                        animated = true
+                    )
 
                     Spacer(modifier = Modifier.height(24.dp))
 

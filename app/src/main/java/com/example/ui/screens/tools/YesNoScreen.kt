@@ -92,7 +92,7 @@ fun YesNoScreen(
 
     var includeMaybe by remember { mutableStateOf(false) }
     var questionInput by remember { mutableStateOf("") }
-    var resultText by remember { mutableStateOf<String?>("YES") }
+    var resultText by remember { mutableStateOf<String?>(null) }
     var isDeciding by remember { mutableStateOf(false) }
 
     var yesCount by remember { mutableIntStateOf(0) }
@@ -158,7 +158,8 @@ fun YesNoScreen(
     val accentColor = when (resultText) {
         "YES" -> EmeraldAccent
         "NO" -> RoseAccent
-        else -> AmberAccent
+        "MAYBE" -> AmberAccent
+        else -> ToolType.YES_NO.accentColor
     }
 
     Scaffold(
@@ -186,9 +187,9 @@ fun YesNoScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(horizontal = 16.dp),
+                .padding(horizontal = 12.dp),
             contentPadding = PaddingValues(vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Main Decision Stage Box (High-Contrast, Prominent Decision Showcase)

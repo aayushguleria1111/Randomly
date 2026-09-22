@@ -3,6 +3,7 @@ package com.example.ui.screens.tools
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -114,12 +115,6 @@ fun DiceScreen(
         }
     }
 
-    LaunchedEffect(Unit) {
-        if (rollResult == null) {
-            roll()
-        }
-    }
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -145,44 +140,47 @@ fun DiceScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+                .padding(horizontal = 12.dp),
+            contentPadding = PaddingValues(vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Animated Dice View
-            rollResult?.let { result ->
-                item {
-                    Box(modifier = Modifier.fillMaxWidth().widthIn(max = 520.dp)) {
-                        AnimatedDiceView(
-                            diceType = result.diceType,
-                            rolls = result.rolls,
-                            isRolling = isRolling,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
+            item {
+                Box(modifier = Modifier.fillMaxWidth().widthIn(max = 520.dp)) {
+                    AnimatedDiceView(
+                        diceType = rollResult?.diceType ?: selectedDiceType,
+                        rolls = rollResult?.rolls ?: List(diceCount) { 1 },
+                        isRolling = isRolling,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
+            }
 
-                // Result Card
-                item {
-                    Box(modifier = Modifier.fillMaxWidth().widthIn(max = 520.dp)) {
-                        ResultDisplayCard(
-                            resultText = "${result.total}",
-                            detailsText = result.equation,
-                            accentColor = ToolType.DICE.accentColor,
-                            onCopy = {
+            // Result Card
+            item {
+                Box(modifier = Modifier.fillMaxWidth().widthIn(max = 520.dp)) {
+                    ResultDisplayCard(
+                        resultText = rollResult?.let { "${it.total}" } ?: "—",
+                        detailsText = rollResult?.equation ?: "Ready to roll ${diceCount}×${selectedDiceType.label}${if (modifierValue != 0) (if (modifierValue > 0) " +$modifierValue" else " $modifierValue") else ""}",
+                        accentColor = ToolType.DICE.accentColor,
+                        onCopy = {
+                            rollResult?.let { result ->
                                 ShareUtil.copyToClipboard(context, "${result.total} (${result.equation})")
                                 viewModel.showMessage("Copied dice result: ${result.total}")
-                            },
-                            onShare = {
+                            }
+                        },
+                        onShare = {
+                            rollResult?.let { result ->
                                 ShareUtil.shareText(
                                     context,
                                     "Dice Roll (${diceCount}×${result.diceType.label})",
                                     "Result: ${result.total}\nEquation: ${result.equation}"
                                 )
-                            },
-                            onRegenerate = { roll() }
-                        )
-                    }
+                            }
+                        },
+                        onRegenerate = { roll() }
+                    )
                 }
             }
 
@@ -210,7 +208,6 @@ fun DiceScreen(
                                     selected = selectedDiceType == type,
                                     onClick = {
                                         selectedDiceType = type
-                                        roll()
                                     },
                                     label = { Text(type.label) }
                                 )
@@ -228,7 +225,7 @@ fun DiceScreen(
                             Text("Number of Dice", style = MaterialTheme.typography.bodyLarge)
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 FilledTonalIconButton(
-                                    onClick = { if (diceCount > 1) { diceCount--; roll() } },
+                                    onClick = { if (diceCount > 1) diceCount-- },
                                     enabled = diceCount > 1
                                 ) {
                                     Icon(Icons.Default.Remove, contentDescription = "Decrease count")
@@ -240,7 +237,7 @@ fun DiceScreen(
                                     modifier = Modifier.padding(horizontal = 16.dp)
                                 )
                                 FilledTonalIconButton(
-                                    onClick = { if (diceCount < 10) { diceCount++; roll() } },
+                                    onClick = { if (diceCount < 10) diceCount++ },
                                     enabled = diceCount < 10
                                 ) {
                                     Icon(Icons.Default.Add, contentDescription = "Increase count")
@@ -259,7 +256,7 @@ fun DiceScreen(
                             Text("Modifier (+ / -)", style = MaterialTheme.typography.bodyLarge)
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 FilledTonalIconButton(
-                                    onClick = { modifierValue--; roll() }
+                                    onClick = { modifierValue-- }
                                 ) {
                                     Icon(Icons.Default.Remove, contentDescription = "Decrease modifier")
                                 }
@@ -270,7 +267,7 @@ fun DiceScreen(
                                     modifier = Modifier.padding(horizontal = 12.dp)
                                 )
                                 FilledTonalIconButton(
-                                    onClick = { modifierValue++; roll() }
+                                    onClick = { modifierValue++ }
                                 ) {
                                     Icon(Icons.Default.Add, contentDescription = "Increase modifier")
                                 }

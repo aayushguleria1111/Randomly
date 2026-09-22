@@ -48,6 +48,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -63,11 +64,15 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.example.R
 import com.example.data.model.ToolPreset
 import com.example.data.model.ToolType
 import com.example.ui.components.ResultDisplayCard
@@ -176,7 +181,18 @@ fun WheelScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Spin Wheel", style = MaterialTheme.typography.titleLarge) },
+                title = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_spin_wheel_logo),
+                            contentDescription = "Spin Wheel Logo",
+                            tint = Color.Unspecified,
+                            modifier = Modifier.size(28.dp)
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text("Spin Wheel", style = MaterialTheme.typography.titleLarge)
+                    }
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -198,9 +214,9 @@ fun WheelScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(horizontal = 16.dp),
+                .padding(horizontal = 12.dp),
             contentPadding = PaddingValues(vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Main Showcase Stage Card (High-Contrast, Distinct Frame)
@@ -222,6 +238,41 @@ fun WheelScreen(
                             .padding(vertical = 12.dp, horizontal = 8.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
+                        // Header Badge with Wheel Logo Emblem
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = ToolType.SPIN_WHEEL.accentColor.copy(alpha = 0.12f),
+                            border = BorderStroke(1.dp, ToolType.SPIN_WHEEL.accentColor.copy(alpha = 0.35f)),
+                            modifier = Modifier.padding(bottom = 6.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_spin_wheel_logo),
+                                    contentDescription = null,
+                                    tint = Color.Unspecified,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "LUCKY WHEEL",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontWeight = FontWeight.ExtraBold,
+                                        letterSpacing = 1.1.sp
+                                    ),
+                                    color = ToolType.SPIN_WHEEL.accentColor
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "•  ${items.size} SLICES",
+                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+
                         SpinWheelCanvas(
                             items = items,
                             currentRotation = rotation.value,
@@ -510,6 +561,14 @@ fun WheelScreen(
     if (showWinnerDialog && winningItem != null) {
         AlertDialog(
             onDismissRequest = { showWinnerDialog = false },
+            icon = {
+                Icon(
+                    painter = painterResource(R.drawable.ic_spin_wheel_logo),
+                    contentDescription = "Spin Wheel Winner",
+                    tint = Color.Unspecified,
+                    modifier = Modifier.size(56.dp)
+                )
+            },
             title = {
                 Text("🎉 Winner Chosen!", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
             },

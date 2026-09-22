@@ -13,9 +13,10 @@ import androidx.compose.material.icons.filled.MonetizationOn
 import androidx.compose.material.icons.filled.QuestionMark
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.Style
-import androidx.compose.material.icons.filled.Tune
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.example.ui.icons.SpinBottleIcon
+import com.example.ui.icons.SpinWheelIcon
 
 enum class ToolCategory(val title: String) {
     ESSENTIALS("Essentials"),
@@ -31,7 +32,8 @@ enum class ToolType(
     val category: ToolCategory,
     val icon: ImageVector,
     val accentColor: Color,
-    val route: String
+    val route: String,
+    val isNew: Boolean = false
 ) {
     NUMBER(
         id = "number",
@@ -56,7 +58,7 @@ enum class ToolType(
         title = "Spin Wheel",
         subtitle = "Let the wheel decide for you",
         category = ToolCategory.DECISIONS,
-        icon = Icons.Default.Tune,
+        icon = SpinWheelIcon,
         accentColor = Color(0xFFF59E0B),
         route = "tool_wheel"
     ),
@@ -149,6 +151,16 @@ enum class ToolType(
         icon = Icons.Default.Shuffle,
         accentColor = Color(0xFF0EA5E9),
         route = "tool_choice"
+    ),
+    SPIN_BOTTLE(
+        id = "spin_bottle",
+        title = "Spin the Bottle",
+        subtitle = "Party spinner with swipe physics & player circle",
+        category = ToolCategory.GAMES,
+        icon = SpinBottleIcon,
+        accentColor = Color(0xFF0D9488),
+        route = "tool_bottle",
+        isNew = true
     );
 
     companion object {

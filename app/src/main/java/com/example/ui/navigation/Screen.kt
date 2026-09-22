@@ -37,6 +37,7 @@ sealed class Screen(
     data object Card : Screen("tool/card", "Card", Icons.Filled.Casino, Icons.Filled.Casino)
     data object YesNo : Screen("tool/yes_no", "Yes / No", Icons.Filled.Casino, Icons.Filled.Casino)
     data object Choice : Screen("tool/choice", "Choice", Icons.Filled.Casino, Icons.Filled.Casino)
+    data object Bottle : Screen("tool/bottle", "Spin the Bottle", Icons.Filled.Casino, Icons.Filled.Casino)
 }
 
 val BottomNavScreens = listOf(

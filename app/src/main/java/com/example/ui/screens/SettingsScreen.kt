@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -57,6 +58,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.example.ui.components.AppLogo
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -101,8 +103,9 @@ fun SettingsScreen(
             modifier = modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(horizontal = 12.dp),
+            contentPadding = PaddingValues(vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             // Theme Mode
             item {
@@ -317,10 +320,10 @@ fun SettingsScreen(
                                                     Text(
                                                         text = "Aa",
                                                         fontSize = when (size) {
-                                                            AppTextSize.SMALL -> 13.sp
-                                                            AppTextSize.SMALL_MEDIUM -> 15.sp
-                                                            AppTextSize.MEDIUM -> 17.sp
-                                                            AppTextSize.LARGE -> 20.sp
+                                                            AppTextSize.SMALL -> 11.sp
+                                                            AppTextSize.SMALL_MEDIUM -> 14.sp
+                                                            AppTextSize.MEDIUM -> 18.sp
+                                                            AppTextSize.LARGE -> 23.sp
                                                         },
                                                         fontWeight = FontWeight.Bold,
                                                         color = contentColor
@@ -664,7 +667,7 @@ fun SettingsScreen(
                             .padding(16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Default.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        AppLogo(size = 42.dp)
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
                             Text("Randomly Toolbox", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)

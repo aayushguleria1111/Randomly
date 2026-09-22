@@ -27,10 +27,10 @@ enum class AppTextSize(
     val scaleMultiplier: Float,
     val description: String
 ) {
-    SMALL("Small", 0.85f, "Compact text for higher content density"),
-    SMALL_MEDIUM("Small-Medium", 0.94f, "Default balanced text size"),
-    MEDIUM("Medium", 1.05f, "Slightly enlarged text for comfortable reading"),
-    LARGE("Large", 1.18f, "Larger text for maximum readability")
+    SMALL("Small", 0.76f, "Compact text for higher content density"),
+    SMALL_MEDIUM("Small-Medium", 0.92f, "Default balanced text size"),
+    MEDIUM("Medium", 1.10f, "Slightly enlarged text for comfortable reading"),
+    LARGE("Large", 1.30f, "Significantly larger text for maximum readability")
 }
 
 data class AppSettings(

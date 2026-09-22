@@ -6,6 +6,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -147,12 +148,6 @@ fun DateScreen(
         }
     }
 
-    LaunchedEffect(Unit) {
-        if (selectedDateResult == null) {
-            generate()
-        }
-    }
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -178,33 +173,37 @@ fun DateScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(horizontal = 12.dp),
+            contentPadding = PaddingValues(vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            selectedDateResult?.let { date ->
-                item {
-                    val formatted = date.format(dateFormatter)
-                    val dayOfWeek = date.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault())
-                    Box(
-                        modifier = Modifier.graphicsLayer {
-                            scaleX = dateScale.value
-                            scaleY = dateScale.value
-                        }
-                    ) {
-                        ResultDisplayCard(
-                            resultText = formatted,
-                            detailsText = "Day of week: $dayOfWeek",
-                            accentColor = ToolType.DATE.accentColor,
-                            onCopy = {
+            item {
+                val hasDate = selectedDateResult != null
+                val formatted = selectedDateResult?.format(dateFormatter) ?: "---- / -- / --"
+                val dayOfWeek = selectedDateResult?.dayOfWeek?.getDisplayName(TextStyle.FULL, Locale.getDefault()) ?: ""
+                Box(
+                    modifier = Modifier.graphicsLayer {
+                        scaleX = dateScale.value
+                        scaleY = dateScale.value
+                    }
+                ) {
+                    ResultDisplayCard(
+                        resultText = formatted,
+                        detailsText = if (hasDate) "Day of week: $dayOfWeek" else "Range: $startDate → $endDate • Tap Generate Date",
+                        accentColor = ToolType.DATE.accentColor,
+                        onCopy = {
+                            if (hasDate) {
                                 ShareUtil.copyToClipboard(context, formatted)
                                 viewModel.showMessage("Copied date to clipboard")
-                            },
-                            onShare = {
+                            }
+                        },
+                        onShare = {
+                            if (hasDate) {
                                 ShareUtil.shareText(context, "Random Date", formatted)
-                            },
-                            onRegenerate = { generate() }
-                        )
-                    }
+                            }
+                        },
+                        onRegenerate = { generate() }
+                    )
                 }
             }
 
@@ -226,7 +225,6 @@ fun DateScreen(
                             onClick = {
                                 startDate = range.first
                                 endDate = range.second
-                                generate()
                             },
                             label = { Text(title) }
                         )

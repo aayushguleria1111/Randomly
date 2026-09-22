@@ -6,6 +6,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -155,12 +156,6 @@ fun StringGeneratorScreen(
         }
     }
 
-    LaunchedEffect(Unit) {
-        if (generatedString.isEmpty()) {
-            generate()
-        }
-    }
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -186,8 +181,9 @@ fun StringGeneratorScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(horizontal = 12.dp),
+            contentPadding = PaddingValues(vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             // Notice Disclaimer Banner
             item {
@@ -211,28 +207,31 @@ fun StringGeneratorScreen(
                 }
             }
 
-            if (generatedString.isNotEmpty()) {
-                item {
-                    Box(
-                        modifier = Modifier.graphicsLayer {
-                            scaleX = stringScale.value
-                            scaleY = stringScale.value
-                        }
-                    ) {
-                        ResultDisplayCard(
-                            resultText = generatedString,
-                            detailsText = "Length: ${lengthSlider.toInt()} characters",
-                            accentColor = ToolType.STRING_GENERATOR.accentColor,
-                            onCopy = {
+            item {
+                val hasString = generatedString.isNotEmpty()
+                Box(
+                    modifier = Modifier.graphicsLayer {
+                        scaleX = stringScale.value
+                        scaleY = stringScale.value
+                    }
+                ) {
+                    ResultDisplayCard(
+                        resultText = if (hasString) generatedString else "••••••••",
+                        detailsText = if (hasString) "Length: ${lengthSlider.toInt()} characters" else "Length: ${lengthSlider.toInt()} characters • Tap Generate String",
+                        accentColor = ToolType.STRING_GENERATOR.accentColor,
+                        onCopy = {
+                            if (hasString) {
                                 ShareUtil.copyToClipboard(context, generatedString)
                                 viewModel.showMessage("Copied string to clipboard")
-                            },
-                            onShare = {
+                            }
+                        },
+                        onShare = {
+                            if (hasString) {
                                 ShareUtil.shareText(context, "Random String", generatedString)
-                            },
-                            onRegenerate = { generate() }
-                        )
-                    }
+                            }
+                        },
+                        onRegenerate = { generate() }
+                    )
                 }
             }
 
@@ -265,23 +264,23 @@ fun StringGeneratorScreen(
 
                         // Toggles
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Checkbox(checked = includeUpper, onCheckedChange = { includeUpper = it; generate() })
+                            Checkbox(checked = includeUpper, onCheckedChange = { includeUpper = it })
                             Text("Uppercase Letters (A-Z)")
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Checkbox(checked = includeLower, onCheckedChange = { includeLower = it; generate() })
+                            Checkbox(checked = includeLower, onCheckedChange = { includeLower = it })
                             Text("Lowercase Letters (a-z)")
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Checkbox(checked = includeNumbers, onCheckedChange = { includeNumbers = it; generate() })
+                            Checkbox(checked = includeNumbers, onCheckedChange = { includeNumbers = it })
                             Text("Numbers (0-9)")
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Checkbox(checked = includeSymbols, onCheckedChange = { includeSymbols = it; generate() })
+                            Checkbox(checked = includeSymbols, onCheckedChange = { includeSymbols = it })
                             Text("Symbols (!@#$%...)")
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Checkbox(checked = avoidAmbiguous, onCheckedChange = { avoidAmbiguous = it; generate() })
+                            Checkbox(checked = avoidAmbiguous, onCheckedChange = { avoidAmbiguous = it })
                             Text("Avoid Ambiguous (O, 0, I, l, 1)")
                         }
 

@@ -1,0 +1,139 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="96dp"
+    android:height="96dp"
+    android:viewportWidth="96"
+    android:viewportHeight="96">
+
+    <!-- Drop Shadow / Outer Ambient Glow -->
+    <path
+        android:fillColor="#26000000"
+        android:pathData="M48,53m-41,0a41,41 0,1 1,82 0a41,41 0,1 1,-82 0" />
+
+    <!-- Outer Golden Bezel Rim -->
+    <path
+        android:fillColor="#D97706"
+        android:pathData="M48,52m-39,0a39,39 0,1 1,78 0a39,39 0,1 1,-78 0" />
+    <path
+        android:fillColor="#FBBF24"
+        android:pathData="M48,52m-37.5,0a37.5,37.5 0,1 1,75 0a37.5,37.5 0,1 1,-75 0" />
+    <path
+        android:fillColor="#0F172A"
+        android:pathData="M48,52m-34,0a34,34 0,1 1,68 0a34,34 0,1 1,-68 0" />
+
+    <!-- 8 Multi-Color Wheel Sectors (Center at 48, 52; Radius 33) -->
+    <!-- Sector 1: Top Right 0° to 45° (from angle -90° to -45°: top to top-right) -->
+    <!-- Note: Angles from (48, 52): 
+         0 deg (Top): (48, 19)
+         45 deg (Top-Right): (71.33, 28.67)
+         90 deg (Right): (81, 52)
+         135 deg (Bottom-Right): (71.33, 75.33)
+         180 deg (Bottom): (48, 85)
+         225 deg (Bottom-Left): (24.67, 75.33)
+         270 deg (Left): (15, 52)
+         315 deg (Top-Left): (24.67, 28.67)
+    -->
+
+    <!-- Sector 1: 0° to 45° (Indigo) -->
+    <path
+        android:fillColor="#4F46E5"
+        android:pathData="M48,52 L48,19 A33,33 0 0,1 71.33,28.67 Z" />
+
+    <!-- Sector 2: 45° to 90° (Teal) -->
+    <path
+        android:fillColor="#0D9488"
+        android:pathData="M48,52 L71.33,28.67 A33,33 0 0,1 81,52 Z" />
+
+    <!-- Sector 3: 90° to 135° (Amber Gold) -->
+    <path
+        android:fillColor="#F59E0B"
+        android:pathData="M48,52 L81,52 A33,33 0 0,1 71.33,75.33 Z" />
+
+    <!-- Sector 4: 135° to 180° (Rose) -->
+    <path
+        android:fillColor="#E11D48"
+        android:pathData="M48,52 L71.33,75.33 A33,33 0 0,1 48,85 Z" />
+
+    <!-- Sector 5: 180° to 225° (Deep Violet) -->
+    <path
+        android:fillColor="#7C3AED"
+        android:pathData="M48,52 L48,85 A33,33 0 0,1 24.67,75.33 Z" />
+
+    <!-- Sector 6: 225° to 270° (Emerald) -->
+    <path
+        android:fillColor="#10B981"
+        android:pathData="M48,52 L24.67,75.33 A33,33 0 0,1 15,52 Z" />
+
+    <!-- Sector 7: 270° to 315° (Sky Blue) -->
+    <path
+        android:fillColor="#0284C7"
+        android:pathData="M48,52 L15,52 A33,33 0 0,1 24.67,28.67 Z" />
+
+    <!-- Sector 8: 315° to 360° (Magenta Pink) -->
+    <path
+        android:fillColor="#DB2777"
+        android:pathData="M48,52 L24.67,28.67 A33,33 0 0,1 48,19 Z" />
+
+    <!-- Sector Divider Spokes (Crisp White Highlights) -->
+    <path
+        android:strokeColor="#80FFFFFF"
+        android:strokeWidth="1.5"
+        android:pathData="M48,52 L48,19 M48,52 L71.33,28.67 M48,52 L81,52 M48,52 L71.33,75.33 M48,52 L48,85 M48,52 L24.67,75.33 M48,52 L15,52 M48,52 L24.67,28.67" />
+
+    <!-- Golden Ticker Pegs on Rim -->
+    <!-- 8 perimeter pegs -->
+    <path android:fillColor="#FDE68A" android:pathData="M48,16m-2,0a2,2 0,1 1,4 0a2,2 0,1 1,-4 0" />
+    <path android:fillColor="#FDE68A" android:pathData="M73.46,26.54m-2,0a2,2 0,1 1,4 0a2,2 0,1 1,-4 0" />
+    <path android:fillColor="#FDE68A" android:pathData="M84,52m-2,0a2,2 0,1 1,4 0a2,2 0,1 1,-4 0" />
+    <path android:fillColor="#FDE68A" android:pathData="M73.46,77.46m-2,0a2,2 0,1 1,4 0a2,2 0,1 1,-4 0" />
+    <path android:fillColor="#FDE68A" android:pathData="M48,88m-2,0a2,2 0,1 1,4 0a2,2 0,1 1,-4 0" />
+    <path android:fillColor="#FDE68A" android:pathData="M22.54,77.46m-2,0a2,2 0,1 1,4 0a2,2 0,1 1,-4 0" />
+    <path android:fillColor="#FDE68A" android:pathData="M12,52m-2,0a2,2 0,1 1,4 0a2,2 0,1 1,-4 0" />
+    <path android:fillColor="#FDE68A" android:pathData="M22.54,26.54m-2,0a2,2 0,1 1,4 0a2,2 0,1 1,-4 0" />
+
+    <!-- Center Hub Outer Bezel (Gold) -->
+    <path
+        android:fillColor="#D97706"
+        android:pathData="M48,52m-13,0a13,13 0,1 1,26 0a13,13 0,1 1,-26 0" />
+    <path
+        android:fillColor="#FBBF24"
+        android:pathData="M48,52m-11.5,0a11.5,11.5 0,1 1,23 0a11.5,11.5 0,1 1,-23 0" />
+    <!-- Center Hub Inner Core (Slate) -->
+    <path
+        android:fillColor="#0F172A"
+        android:pathData="M48,52m-8.5,0a8.5,8.5 0,1 1,17 0a8.5,8.5 0,1 1,-17 0" />
+
+    <!-- Center Star Emblem (Gold 4-Point Star) -->
+    <path
+        android:fillColor="#F59E0B"
+        android:pathData="M48,46 L49.6,50.4 L54,52 L49.6,53.6 L48,58 L46.4,53.6 L42,52 L46.4,50.4 Z" />
+    <path
+        android:fillColor="#FEF08A"
+        android:pathData="M48,48 L49,51 L52,52 L49,53 L48,56 L47,53 L44,52 L47,51 Z" />
+
+    <!-- Top Pointer Indicator (Ruby with Shadow and Gold Mount) -->
+    <!-- Drop Shadow -->
+    <path
+        android:fillColor="#40000000"
+        android:pathData="M48,22 L41,9 L55,9 Z" />
+    <!-- Pointer Body -->
+    <path
+        android:fillColor="#EF4444"
+        android:pathData="M48,21 L42,7 L54,7 Z" />
+    <path
+        android:fillColor="#DC2626"
+        android:pathData="M48,21 L48,7 L54,7 Z" />
+    <!-- Pointer White Highlight Edge -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1"
+        android:pathData="M42,7 L48,21 L54,7" />
+    <!-- Top Mount Pin (Gold) -->
+    <path
+        android:fillColor="#FBBF24"
+        android:pathData="M48,7m-3.5,0a3.5,3.5 0,1 1,7 0a3.5,3.5 0,1 1,-7 0" />
+    <path
+        android:fillColor="#B45309"
+        android:pathData="M48,7m-2,0a2,2 0,1 1,4 0a2,2 0,1 1,-4 0" />
+
+</vector>

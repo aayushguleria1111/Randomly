@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -162,12 +163,6 @@ fun NumberScreen(
         )
     }
 
-    LaunchedEffect(Unit) {
-        if (results.isEmpty()) {
-            generate()
-        }
-    }
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -193,38 +188,50 @@ fun NumberScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+                .padding(horizontal = 12.dp),
+            contentPadding = PaddingValues(vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             item {
-                if (displayResults.isNotEmpty() || results.isNotEmpty()) {
-                    val activeList = if (displayResults.isNotEmpty()) displayResults else results
-                    val resultDisplay = if (activeList.size == 1) "${activeList.first()}" else activeList.joinToString(", ")
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .widthIn(max = 520.dp)
-                            .graphicsLayer {
-                                scaleX = rollScale.value
-                                scaleY = rollScale.value
-                                translationX = shakeX.value
-                            }
-                    ) {
-                        ResultDisplayCard(
-                            resultText = resultDisplay,
-                            detailsText = if (isRolling) "Rolling..." else "Range: $minInput → $maxInput (${activeList.size} number${if (activeList.size > 1) "s" else ""})",
-                            accentColor = ToolType.NUMBER.accentColor,
-                            onCopy = {
+                val hasResults = displayResults.isNotEmpty() || results.isNotEmpty()
+                val activeList = if (displayResults.isNotEmpty()) displayResults else results
+                val resultDisplay = if (hasResults) {
+                    if (activeList.size == 1) "${activeList.first()}" else activeList.joinToString(", ")
+                } else {
+                    "?"
+                }
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .widthIn(max = 520.dp)
+                        .graphicsLayer {
+                            scaleX = rollScale.value
+                            scaleY = rollScale.value
+                            translationX = shakeX.value
+                        }
+                ) {
+                    ResultDisplayCard(
+                        resultText = resultDisplay,
+                        detailsText = if (isRolling) "Rolling..." else if (hasResults) {
+                            "Range: $minInput → $maxInput (${activeList.size} number${if (activeList.size > 1) "s" else ""})"
+                        } else {
+                            "Range: $minInput to $maxInput • Tap Generate to start"
+                        },
+                        accentColor = ToolType.NUMBER.accentColor,
+                        onCopy = {
+                            if (hasResults) {
                                 ShareUtil.copyToClipboard(context, resultDisplay)
                                 viewModel.showMessage("Copied $resultDisplay to clipboard")
-                            },
-                            onShare = {
+                            }
+                        },
+                        onShare = {
+                            if (hasResults) {
                                 ShareUtil.shareText(context, "Random Number Result", resultDisplay)
-                            },
-                            onRegenerate = { generate() }
-                        )
-                    }
+                            }
+                        },
+                        onRegenerate = { generate() }
+                    )
                 }
             }
 
@@ -277,7 +284,6 @@ fun NumberScreen(
                                     onClick = {
                                         minInput = pMin.toString()
                                         maxInput = pMax.toString()
-                                        generate()
                                     },
                                     label = { Text("$pMin – $pMax") }
                                 )

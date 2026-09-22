@@ -1,80 +1,179 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- Subtle Ground Shadow -->
+    <!-- 1. Soft Ambient Ground Shadow under 3D Cube -->
     <path
-        android:fillColor="#30000000"
-        android:pathData="M 30,76 A 24,7 0 1,0 78,76 A 24,7 0 1,0 30,76 Z" />
+        android:fillColor="#38000000"
+        android:pathData="M 30,78 A 24,7 0 1,0 78,78 A 24,7 0 1,0 30,78 Z" />
 
-    <!-- DIE 1 (Back Left, tilted slightly -12 deg) -->
-    <group
-        android:pivotX="40"
-        android:pivotY="50"
-        android:rotation="-12">
-        <!-- Die 1 Body with subtle border -->
-        <path
-            android:fillColor="#E0E7FF"
-            android:strokeColor="#C7D2FE"
-            android:strokeWidth="1.5"
-            android:pathData="M 26,34 L 54,34 A 7,7 0 0,1 61,41 L 61,69 A 7,7 0 0,1 54,76 L 26,76 A 7,7 0 0,1 19,69 L 19,41 A 7,7 0 0,1 26,34 Z" />
-        <!-- Die 1 Pips (5 dots, Deep Indigo #312E81) -->
-        <!-- Top Left -->
-        <path
-            android:fillColor="#3730A3"
-            android:pathData="M 28,43 A 3,3 0 1,0 34,43 A 3,3 0 1,0 28,43 Z" />
-        <!-- Top Right -->
-        <path
-            android:fillColor="#3730A3"
-            android:pathData="M 46,43 A 3,3 0 1,0 52,43 A 3,3 0 1,0 46,43 Z" />
-        <!-- Center -->
-        <path
-            android:fillColor="#3730A3"
-            android:pathData="M 37,55 A 3,3 0 1,0 43,55 A 3,3 0 1,0 37,55 Z" />
-        <!-- Bottom Left -->
-        <path
-            android:fillColor="#3730A3"
-            android:pathData="M 28,67 A 3,3 0 1,0 34,67 A 3,3 0 1,0 28,67 Z" />
-        <!-- Bottom Right -->
-        <path
-            android:fillColor="#3730A3"
-            android:pathData="M 46,67 A 3,3 0 1,0 52,67 A 3,3 0 1,0 46,67 Z" />
-    </group>
+    <!-- 2. Back Segment of the Orbital Energy Ring -->
+    <path
+        android:strokeColor="#4D818CF8"
+        android:strokeWidth="2.0"
+        android:strokeLineCap="round"
+        android:pathData="M 27,53 C 25,41 36,29 52,27" />
 
-    <!-- DIE 2 (Front Right, tilted +10 deg, overlaps Die 1) -->
-    <group
-        android:pivotX="68"
-        android:pivotY="56"
-        android:rotation="10">
-        <!-- Die 2 Cast Shadow on Die 1 -->
-        <path
-            android:fillColor="#25000000"
-            android:pathData="M 45,39 L 75,39 A 8,8 0 0,1 83,47 L 83,77 A 8,8 0 0,1 75,85 L 45,85 A 8,8 0 0,1 37,77 L 37,47 A 8,8 0 0,1 45,39 Z" />
-        <!-- Die 2 Body (Clean Brilliant White) -->
-        <path
-            android:fillColor="#FFFFFF"
-            android:strokeColor="#EEF2F6"
-            android:strokeWidth="1.2"
-            android:pathData="M 47,38 L 75,38 A 7,7 0 0,1 82,45 L 82,73 A 7,7 0 0,1 75,80 L 47,80 A 7,7 0 0,1 40,73 L 40,45 A 7,7 0 0,1 47,38 Z" />
-        <!-- Die 2 Pips (3 diagonal dots, Electric Violet/Indigo #4F46E5) -->
-        <!-- Top Left -->
-        <path
-            android:fillColor="#4F46E5"
-            android:pathData="M 48,46 A 3.2,3.2 0 1,0 54.4,46 A 3.2,3.2 0 1,0 48,46 Z" />
-        <!-- Center -->
-        <path
-            android:fillColor="#4F46E5"
-            android:pathData="M 57.8,59 A 3.2,3.2 0 1,0 64.2,59 A 3.2,3.2 0 1,0 57.8,59 Z" />
-        <!-- Bottom Right -->
-        <path
-            android:fillColor="#4F46E5"
-            android:pathData="M 67.6,72 A 3.2,3.2 0 1,0 74,72 A 3.2,3.2 0 1,0 67.6,72 Z" />
-    </group>
+    <!-- 3. ISOMETRIC 3D LUCKY CUBE -->
 
-    <!-- Tiny sparkle/star accent -->
+    <!-- A. LEFT FACE (Royal Sapphire/Indigo) -->
+    <path
+        android:pathData="M 34,44 L 54,55 L 54,77 L 34,66 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="34"
+                android:startY="44"
+                android:endX="54"
+                android:endY="77"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#4F46E5" />
+                <item android:offset="0.6" android:color="#3730A3" />
+                <item android:offset="1.0" android:color="#1E1B4B" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <!-- Left Face Subtle Chamfer Outline -->
+    <path
+        android:strokeColor="#40818CF8"
+        android:strokeWidth="0.8"
+        android:pathData="M 34,44 L 54,55 L 54,77 L 34,66 Z" />
+
+    <!-- Left Face 3 Luminous Pips (Isometric Diagonal) -->
+    <!-- Pip 1 -->
+    <path
+        android:fillColor="#EEF2FF"
+        android:pathData="M 39,52m-2.2,0a2.2,2.2 0 1,1 4.4,0a2.2,2.2 0 1,1 -4.4,0" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 39,52m-1.2,0a1.2,1.2 0 1,1 2.4,0a1.2,1.2 0 1,1 -2.4,0" />
+    <!-- Pip 2 (Center) -->
+    <path
+        android:fillColor="#EEF2FF"
+        android:pathData="M 44,60m-2.2,0a2.2,2.2 0 1,1 4.4,0a2.2,2.2 0 1,1 -4.4,0" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 44,60m-1.2,0a1.2,1.2 0 1,1 2.4,0a1.2,1.2 0 1,1 -2.4,0" />
+    <!-- Pip 3 -->
+    <path
+        android:fillColor="#EEF2FF"
+        android:pathData="M 49,68m-2.2,0a2.2,2.2 0 1,1 4.4,0a2.2,2.2 0 1,1 -4.4,0" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 49,68m-1.2,0a1.2,1.2 0 1,1 2.4,0a1.2,1.2 0 1,1 -2.4,0" />
+
+    <!-- B. RIGHT FACE (Vibrant Magenta/Amethyst Violet) -->
+    <path
+        android:pathData="M 54,55 L 74,44 L 74,66 L 54,77 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="54"
+                android:startY="55"
+                android:endX="74"
+                android:endY="66"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#7C3AED" />
+                <item android:offset="0.65" android:color="#6D28D9" />
+                <item android:offset="1.0" android:color="#4C1D95" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <!-- Right Face Subtle Chamfer Outline -->
+    <path
+        android:strokeColor="#40C084FC"
+        android:strokeWidth="0.8"
+        android:pathData="M 54,55 L 74,44 L 74,66 L 54,77 Z" />
+
+    <!-- Right Face 2 Luminous Pips -->
+    <!-- Pip 1 -->
+    <path
+        android:fillColor="#FDF4FF"
+        android:pathData="M 60,58m-2.2,0a2.2,2.2 0 1,1 4.4,0a2.2,2.2 0 1,1 -4.4,0" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 60,58m-1.2,0a1.2,1.2 0 1,1 2.4,0a1.2,1.2 0 1,1 -2.4,0" />
+    <!-- Pip 2 -->
+    <path
+        android:fillColor="#FDF4FF"
+        android:pathData="M 68,62m-2.2,0a2.2,2.2 0 1,1 4.4,0a2.2,2.2 0 1,1 -4.4,0" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 68,62m-1.2,0a1.2,1.2 0 1,1 2.4,0a1.2,1.2 0 1,1 -2.4,0" />
+
+    <!-- C. TOP FACE (Radiant Ice/Lavender Gradient with Specular Sheen) -->
+    <path
+        android:pathData="M 54,33 L 74,44 L 54,55 L 34,44 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="54"
+                android:startY="33"
+                android:endX="54"
+                android:endY="55"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#F5F3FF" />
+                <item android:offset="0.4" android:color="#C7D2FE" />
+                <item android:offset="1.0" android:color="#818CF8" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <!-- Top Face Specular Highlight Edge -->
+    <path
+        android:strokeColor="#B3FFFFFF"
+        android:strokeWidth="1.2"
+        android:pathData="M 34,44 L 54,33 L 74,44" />
+
+    <!-- Top Face Center Fortune Star Pip (Golden Embossed Emblem) -->
+    <path
+        android:fillColor="#F59E0B"
+        android:pathData="M 54,39 L 55.4,42.5 L 59,44 L 55.4,45.5 L 54,49 L 52.6,45.5 L 49,44 L 52.6,42.5 Z" />
+    <path
+        android:fillColor="#FEF08A"
+        android:pathData="M 54,40.5 L 55,43 L 57.5,44 L 55,45 L 54,47.5 L 53,45 L 50.5,44 L 53,43 Z" />
+
+    <!-- 4. Front Dynamic Orbital Energy Swoosh (Wrapping around front of cube) -->
+    <path
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:pathData="M 26,62 C 34,79 58,84 75,74 C 82,70 85,62 84,51 C 83.5,44 79.5,37 76,32">
+        <aapt:attr name="android:strokeColor">
+            <gradient
+                android:startX="26"
+                android:startY="62"
+                android:endX="76"
+                android:endY="32"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#06B6D4" />
+                <item android:offset="0.45" android:color="#38BDF8" />
+                <item android:offset="0.85" android:color="#FBBF24" />
+                <item android:offset="1.0" android:color="#FEF08A" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Mini Orbital Glow Particle -->
+    <path
+        android:fillColor="#FEF08A"
+        android:pathData="M 76,32m-1.5,0a1.5,1.5 0 1,1 3,0a1.5,1.5 0 1,1 -3,0" />
+
+    <!-- 5. Brilliant Fortune Sparkle Burst (Top Right Vertex) -->
+    <!-- Soft Ambient Halo -->
+    <path
+        android:fillColor="#33F59E0B"
+        android:pathData="M 78,28m-7,0a7,7 0 1,1 14,0a7,7 0 1,1 -14,0" />
+    <!-- 4-Point Gold Star -->
     <path
         android:fillColor="#FBBF24"
-        android:pathData="M 78,28 L 79.5,33 L 84,34.5 L 79.5,36 L 78,41 L 76.5,36 L 72,34.5 L 76.5,33 Z" />
+        android:pathData="M 78,20 L 79.8,26.2 L 86,28 L 79.8,29.8 L 78,36 L 76.2,29.8 L 70,28 L 76.2,26.2 Z" />
+    <!-- Pure White Diamond Core -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 78,23.5 L 79.2,27 L 82.5,28 L 79.2,29 L 78,32.5 L 76.8,29 L 73.5,28 L 76.8,27 Z" />
+
+    <!-- 6. Secondary Ambient Sparkle (Left side) -->
+    <path
+        android:fillColor="#A5B4FC"
+        android:pathData="M 28,34 L 29.2,36.8 L 32,38 L 29.2,39.2 L 28,42 L 26.8,39.2 L 24,38 L 26.8,36.8 Z" />
+
 </vector>

@@ -73,20 +73,34 @@ fun SpinWheelCanvas(
             val radius = canvasSize / 2f
             val center = Offset(size.width / 2f, size.height / 2f)
 
-            // Outer bezel ring with drop shadow effect
+            // Outer bezel ring with rich gold and slate drop shadow effect
             drawCircle(
-                color = Color(0xFF0F172A), // Deep slate outer border
+                color = Color.Black.copy(alpha = 0.25f),
                 radius = radius,
                 center = center
             )
+            // Outer golden brass rim
             drawCircle(
-                color = Color(0xFF334155),
+                color = Color(0xFFD97706),
+                radius = radius - 1f,
+                center = center
+            )
+            // Polished gold ring
+            drawCircle(
+                color = Color(0xFFFBBF24),
                 radius = radius - 3f,
                 center = center,
-                style = Stroke(width = 6f)
+                style = Stroke(width = 3.5f)
+            )
+            // Inner dark border framing the sectors
+            drawCircle(
+                color = Color(0xFF0F172A),
+                radius = radius - 6.5f,
+                center = center,
+                style = Stroke(width = 3f)
             )
 
-            val innerRadius = radius - 7f
+            val innerRadius = radius - 8f
 
             // Draw sectors
             for (i in 0 until count) {
@@ -168,7 +182,7 @@ fun SpinWheelCanvas(
                 }
             }
 
-            // Decorative gold pegs on the rim
+            // Decorative 3D gold pegs on the rim
             val pegCount = (count * 2).coerceIn(12, 24)
             for (p in 0 until pegCount) {
                 val pegAngle = currentRotation + (p * 360f / pegCount)
@@ -177,63 +191,166 @@ fun SpinWheelCanvas(
                 val pegX = center.x + pegDist * cos(pegRad)
                 val pegY = center.y + pegDist * sin(pegRad)
 
+                // Peg base shadow / gold body
+                drawCircle(
+                    color = Color(0xFFD97706),
+                    radius = 3.6f,
+                    center = Offset(pegX, pegY)
+                )
                 drawCircle(
                     color = Color(0xFFFBBF24),
-                    radius = 3.2f,
+                    radius = 2.8f,
                     center = Offset(pegX, pegY)
+                )
+                // Specular highlight on pin
+                drawCircle(
+                    color = Color.White.copy(alpha = 0.85f),
+                    radius = 1.0f,
+                    center = Offset(pegX - 0.8f, pegY - 0.8f)
                 )
             }
 
-            // Center Hub
-            // Outer white ring
+            // --- Center Hub Wheel Logo Emblem ---
+            // 1. Hub drop shadow
             drawCircle(
-                color = Color.White,
+                color = Color.Black.copy(alpha = 0.45f),
+                radius = radius * 0.23f,
+                center = center
+            )
+            // 2. Outer gold bezel rim
+            drawCircle(
+                color = Color(0xFFD97706),
                 radius = radius * 0.22f,
                 center = center
             )
-            // Inner dark slate hub
+            // 3. Polished bright gold ring
+            drawCircle(
+                color = Color(0xFFFBBF24),
+                radius = radius * 0.20f,
+                center = center
+            )
+            // 4. Deep slate center plate
             drawCircle(
                 color = Color(0xFF0F172A),
                 radius = radius * 0.17f,
                 center = center
             )
-            // Center accent button (Amber)
+            // 5. Micro groove ring
+            drawCircle(
+                color = Color(0xFF334155),
+                radius = radius * 0.155f,
+                center = center,
+                style = Stroke(width = 2f)
+            )
+            // 6. Center gold jewel button
             drawCircle(
                 color = Color(0xFFF59E0B),
-                radius = radius * 0.10f,
+                radius = radius * 0.125f,
                 center = center
             )
+            drawCircle(
+                color = Color(0xFFFEF08A),
+                radius = radius * 0.11f,
+                center = center,
+                style = Stroke(width = 1.5f)
+            )
 
-            // Draw "SPIN" text or play hint on center hub if not spinning
-            drawContext.canvas.nativeCanvas.apply {
-                val hubPaint = Paint().apply {
-                    this.color = android.graphics.Color.WHITE
-                    this.textSize = 20f
-                    this.textAlign = Paint.Align.CENTER
-                    this.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-                    this.isAntiAlias = true
+            // Center Fortune Emblem / Text
+            if (isSpinning) {
+                // Shimmering 4-point Fortune Star Emblem
+                val starR = radius * 0.08f
+                val starInnerR = radius * 0.025f
+                val starPath = Path().apply {
+                    moveTo(center.x, center.y - starR)
+                    lineTo(center.x + starInnerR, center.y - starInnerR)
+                    lineTo(center.x + starR, center.y)
+                    lineTo(center.x + starInnerR, center.y + starInnerR)
+                    lineTo(center.x, center.y + starR)
+                    lineTo(center.x - starInnerR, center.y + starInnerR)
+                    lineTo(center.x - starR, center.y)
+                    lineTo(center.x - starInnerR, center.y - starInnerR)
+                    close()
                 }
-                drawText(if (isSpinning) "•••" else "TAP", center.x, center.y + 7f, hubPaint)
+                drawPath(path = starPath, color = Color(0xFFFEF08A))
+            } else {
+                drawContext.canvas.nativeCanvas.apply {
+                    val hubPaint = Paint().apply {
+                        this.color = android.graphics.Color.WHITE
+                        this.textSize = 21f
+                        this.textAlign = Paint.Align.CENTER
+                        this.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                        this.isAntiAlias = true
+                        this.setShadowLayer(4f, 0f, 1.5f, android.graphics.Color.argb(180, 0, 0, 0))
+                    }
+                    drawText("SPIN", center.x, center.y + 7.5f, hubPaint)
+                }
             }
         }
 
-        // Top pointer indicator
+        // Top 3D Faceted Ruby Pointer Indicator
         Canvas(
             modifier = Modifier
-                .size(34.dp)
+                .size(36.dp)
                 .align(Alignment.TopCenter)
         ) {
-            val path = Path().apply {
-                moveTo(size.width / 2f, size.height)
-                lineTo(2f, 0f)
-                lineTo(size.width - 2f, 0f)
+            val midX = size.width / 2f
+            val tipY = size.height - 2f
+            val topY = 4f
+            val leftX = 4f
+            val rightX = size.width - 4f
+
+            // Pointer Shadow
+            val shadowPath = Path().apply {
+                moveTo(midX, tipY + 3f)
+                lineTo(leftX, topY)
+                lineTo(rightX, topY)
                 close()
             }
-            // Pointer shadow
-            drawPath(path = path, color = Color.Black.copy(alpha = 0.35f))
-            // Pointer body
-            drawPath(path = path, color = Color(0xFFEF4444))
-            drawPath(path = path, color = Color.White, style = Stroke(width = 2.5f))
+            drawPath(path = shadowPath, color = Color.Black.copy(alpha = 0.35f))
+
+            // Left Facet (Light Ruby)
+            val leftFacet = Path().apply {
+                moveTo(midX, tipY)
+                lineTo(leftX, topY)
+                lineTo(midX, topY)
+                close()
+            }
+            drawPath(path = leftFacet, color = Color(0xFFEF4444))
+
+            // Right Facet (Darker Ruby)
+            val rightFacet = Path().apply {
+                moveTo(midX, tipY)
+                lineTo(midX, topY)
+                lineTo(rightX, topY)
+                close()
+            }
+            drawPath(path = rightFacet, color = Color(0xFFB91C1C))
+
+            // White Edge Outline for crisp contrast
+            val outlinePath = Path().apply {
+                moveTo(midX, tipY)
+                lineTo(leftX, topY)
+                lineTo(rightX, topY)
+                close()
+            }
+            drawPath(path = outlinePath, color = Color.White.copy(alpha = 0.9f), style = Stroke(width = 2.0f))
+
+            // Top Mounting Pin (Gold bead with inner shadow)
+            drawCircle(
+                color = Color(0xFFD97706),
+                radius = 5.5f,
+                center = Offset(midX, topY)
+            )
+            drawCircle(
+                color = Color(0xFFFBBF24),
+                radius = 4.2f,
+                center = Offset(midX, topY)
+            )
+            drawCircle(
+                color = Color(0xFF0F172A),
+                radius = 1.8f,
+                center = Offset(midX, topY)
+            )
         }
     }
 }

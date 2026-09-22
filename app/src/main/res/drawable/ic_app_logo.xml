@@ -1,0 +1,207 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="96dp"
+    android:height="96dp"
+    android:viewportWidth="96"
+    android:viewportHeight="96">
+
+    <!-- Ambient Squircle Shadow -->
+    <path
+        android:fillColor="#35000000"
+        android:pathData="M 12,18 C 12,10 18,4 26,4 L 70,4 C 78,4 84,10 84,18 L 84,82 C 84,90 78,96 70,96 L 26,96 C 18,96 12,90 12,82 Z" />
+
+    <!-- Squircle Badge Base Container with Cosmic Gradient -->
+    <path
+        android:pathData="M 10,16 C 10,8 16,2 24,2 L 72,2 C 80,2 86,8 86,16 L 86,80 C 86,88 80,94 72,94 L 24,94 C 16,94 10,88 10,80 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="10"
+                android:startY="2"
+                android:endX="86"
+                android:endY="94"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#1E1B4B" />
+                <item android:offset="0.5" android:color="#312E81" />
+                <item android:offset="1.0" android:color="#4C1D95" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Subtle Golden-Indigo Squircle Border Rim -->
+    <path
+        android:strokeWidth="1.5"
+        android:pathData="M 10,16 C 10,8 16,2 24,2 L 72,2 C 80,2 86,8 86,16 L 86,80 C 86,88 80,94 72,94 L 24,94 C 16,94 10,88 10,80 Z">
+        <aapt:attr name="android:strokeColor">
+            <gradient
+                android:startX="10"
+                android:startY="2"
+                android:endX="86"
+                android:endY="94"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#6366F1" />
+                <item android:offset="0.5" android:color="#A855F7" />
+                <item android:offset="1.0" android:color="#F59E0B" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Inner Ambient Glow Flare -->
+    <path
+        android:pathData="M48,36m-32,0a32,32 0 1,0 64,0a32,32 0 1,0 -64,0">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:centerX="48"
+                android:centerY="36"
+                android:gradientRadius="32"
+                android:type="radial">
+                <item android:offset="0.0" android:color="#35818CF8" />
+                <item android:offset="1.0" android:color="#00000000" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Cube Ground Drop Shadow -->
+    <path
+        android:fillColor="#38000000"
+        android:pathData="M 26,69 A 22,6.5 0 1,0 70,69 A 22,6.5 0 1,0 26,69 Z" />
+
+    <!-- Back Energy Orbit Segment -->
+    <path
+        android:strokeColor="#4D818CF8"
+        android:strokeWidth="2.0"
+        android:strokeLineCap="round"
+        android:pathData="M 24,47 C 22,36 32,25 46,23" />
+
+    <!-- 3D ISOMETRIC CUBE (Scaled slightly to fit 96x96 viewport centered at 48, 48) -->
+
+    <!-- A. LEFT FACE (Royal Sapphire/Indigo) -->
+    <path
+        android:pathData="M 30,39 L 48,49 L 48,69 L 30,59 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="30"
+                android:startY="39"
+                android:endX="48"
+                android:endY="69"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#4F46E5" />
+                <item android:offset="0.6" android:color="#3730A3" />
+                <item android:offset="1.0" android:color="#1E1B4B" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <path
+        android:strokeColor="#40818CF8"
+        android:strokeWidth="0.8"
+        android:pathData="M 30,39 L 48,49 L 48,69 L 30,59 Z" />
+
+    <!-- Left Face 3 Pips -->
+    <path android:fillColor="#EEF2FF" android:pathData="M 35,46m-2,0a2,2 0 1,1 4,0a2,2 0 1,1 -4,0" />
+    <path android:fillColor="#FFFFFF" android:pathData="M 35,46m-1,0a1,1 0 1,1 2,0a1,1 0 1,1 -2,0" />
+
+    <path android:fillColor="#EEF2FF" android:pathData="M 39,54m-2,0a2,2 0 1,1 4,0a2,2 0 1,1 -4,0" />
+    <path android:fillColor="#FFFFFF" android:pathData="M 39,54m-1,0a1,1 0 1,1 2,0a1,1 0 1,1 -2,0" />
+
+    <path android:fillColor="#EEF2FF" android:pathData="M 43,61m-2,0a2,2 0 1,1 4,0a2,2 0 1,1 -4,0" />
+    <path android:fillColor="#FFFFFF" android:pathData="M 43,61m-1,0a1,1 0 1,1 2,0a1,1 0 1,1 -2,0" />
+
+    <!-- B. RIGHT FACE (Vibrant Amethyst Violet) -->
+    <path
+        android:pathData="M 48,49 L 66,39 L 66,59 L 48,69 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="48"
+                android:startY="49"
+                android:endX="66"
+                android:endY="59"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#7C3AED" />
+                <item android:offset="0.65" android:color="#6D28D9" />
+                <item android:offset="1.0" android:color="#4C1D95" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <path
+        android:strokeColor="#40C084FC"
+        android:strokeWidth="0.8"
+        android:pathData="M 48,49 L 66,39 L 66,59 L 48,69 Z" />
+
+    <!-- Right Face 2 Pips -->
+    <path android:fillColor="#FDF4FF" android:pathData="M 53,52m-2,0a2,2 0 1,1 4,0a2,2 0 1,1 -4,0" />
+    <path android:fillColor="#FFFFFF" android:pathData="M 53,52m-1,0a1,1 0 1,1 2,0a1,1 0 1,1 -2,0" />
+
+    <path android:fillColor="#FDF4FF" android:pathData="M 61,56m-2,0a2,2 0 1,1 4,0a2,2 0 1,1 -4,0" />
+    <path android:fillColor="#FFFFFF" android:pathData="M 61,56m-1,0a1,1 0 1,1 2,0a1,1 0 1,1 -2,0" />
+
+    <!-- C. TOP FACE (Radiant Ice/Lavender Gradient) -->
+    <path
+        android:pathData="M 48,29 L 66,39 L 48,49 L 30,39 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="48"
+                android:startY="29"
+                android:endX="48"
+                android:endY="49"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#F5F3FF" />
+                <item android:offset="0.4" android:color="#C7D2FE" />
+                <item android:offset="1.0" android:color="#818CF8" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <!-- Top Face Specular Highlight Edge -->
+    <path
+        android:strokeColor="#B3FFFFFF"
+        android:strokeWidth="1.2"
+        android:pathData="M 30,39 L 48,29 L 66,39" />
+
+    <!-- Top Face Fortune Star Pip (Golden Embossed Emblem) -->
+    <path
+        android:fillColor="#F59E0B"
+        android:pathData="M 48,34.5 L 49.3,37.7 L 52.5,39 L 49.3,40.3 L 48,43.5 L 46.7,40.3 L 43.5,39 L 46.7,37.7 Z" />
+    <path
+        android:fillColor="#FEF08A"
+        android:pathData="M 48,36 L 48.8,38.2 L 51,39 L 48.8,39.8 L 48,42 L 47.2,39.8 L 45,39 L 47.2,38.2 Z" />
+
+    <!-- Front Dynamic Orbital Energy Swoosh -->
+    <path
+        android:strokeWidth="2.4"
+        android:strokeLineCap="round"
+        android:pathData="M 23,55 C 30,70 52,75 67,66 C 73,62 76,55 75,45 C 74.5,39 71,33 68,29">
+        <aapt:attr name="android:strokeColor">
+            <gradient
+                android:startX="23"
+                android:startY="55"
+                android:endX="68"
+                android:endY="29"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#06B6D4" />
+                <item android:offset="0.45" android:color="#38BDF8" />
+                <item android:offset="0.85" android:color="#FBBF24" />
+                <item android:offset="1.0" android:color="#FEF08A" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Mini Orbital Glow Particle -->
+    <path
+        android:fillColor="#FEF08A"
+        android:pathData="M 68,29m-1.3,0a1.3,1.3 0 1,1 2.6,0a1.3,1.3 0 1,1 -2.6,0" />
+
+    <!-- Brilliant Fortune Sparkle Burst (Top Right) -->
+    <path
+        android:fillColor="#33F59E0B"
+        android:pathData="M 70,25m-6,0a6,6 0 1,1 12,0a6,6 0 1,1 -12,0" />
+    <path
+        android:fillColor="#FBBF24"
+        android:pathData="M 70,18 L 71.6,23.4 L 77,25 L 71.6,26.6 L 70,32 L 68.4,26.6 L 63,25 L 68.4,23.4 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 70,21 L 71,24 L 74,25 L 71,26 L 70,29 L 69,26 L 66,25 L 69,24 Z" />
+
+    <!-- Secondary Ambient Sparkle (Left) -->
+    <path
+        android:fillColor="#A5B4FC"
+        android:pathData="M 25,30 L 26,32.5 L 28.5,33.5 L 26,34.5 L 25,37 L 24,34.5 L 21.5,33.5 L 24,32.5 Z" />
+
+</vector>
