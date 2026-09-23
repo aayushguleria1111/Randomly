@@ -51,6 +51,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -333,69 +334,166 @@ fun ChoiceScreen(
                 }
             }
 
-            // Presets Header & Saved Presets Row (Max 3 built-in)
+            // Presets: Separate Lines for Pre-Made Presets (3) and User-Made Presets
             item {
-                Column(modifier = Modifier.fillMaxWidth().widthIn(max = 520.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            "Ready Presets",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        TextButton(onClick = { showSavePresetDialog = true }) {
-                            Icon(Icons.Default.Save, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Save Preset", style = MaterialTheme.typography.labelMedium)
-                        }
-                    }
+                val builtInPresets = remember(dbPresets) {
+                    dbPresets.filter { it.isBuiltIn }.distinctBy { it.presetName }.take(3)
+                }
+                val userPresets = remember(dbPresets) {
+                    dbPresets.filter { !it.isBuiltIn }.distinctBy { it.id }
+                }
 
-                    Spacer(modifier = Modifier.height(4.dp))
-
-                    LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.fillMaxWidth()
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .widthIn(max = 520.dp),
+                    shape = RoundedCornerShape(18.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(14.dp)
                     ) {
-                        items(dbPresets) { preset ->
-                            val isPresetActive = options.toList() == preset.getItems()
-                            FilterChip(
-                                selected = isPresetActive,
-                                onClick = {
-                                    options.clear()
-                                    options.addAll(preset.getItems())
-                                    selectedWinner = null
-                                    persistCurrentOptions()
-                                    viewModel.showMessage("Loaded: ${preset.presetName}")
-                                },
-                                label = {
-                                    Text(
-                                        preset.presetName,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                },
-                                colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = ToolType.CHOICE.accentColor.copy(alpha = 0.2f),
-                                    selectedLabelColor = ToolType.CHOICE.accentColor
-                                ),
-                                trailingIcon = if (!preset.isBuiltIn) {
-                                    {
-                                        IconButton(
-                                            onClick = { presetToDelete = preset },
-                                            modifier = Modifier.size(18.dp)
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Clear,
-                                                contentDescription = "Delete preset",
-                                                tint = MaterialTheme.colorScheme.error
-                                            )
-                                        }
-                                    }
-                                } else null
+                        // LINE 1: Pre-Made Presets (Single line with 3 presets)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                "Pre-Made Presets",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
                             )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                            ) {
+                                Text(
+                                    text = "3 Ready",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontSize = 10.sp,
+                                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            items(builtInPresets) { preset ->
+                                val isPresetActive = options.toList() == preset.getItems()
+                                FilterChip(
+                                    selected = isPresetActive,
+                                    onClick = {
+                                        options.clear()
+                                        options.addAll(preset.getItems())
+                                        selectedWinner = null
+                                        persistCurrentOptions()
+                                        viewModel.showMessage("Loaded: ${preset.presetName}")
+                                    },
+                                    label = {
+                                        Text(
+                                            preset.presetName,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    },
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = ToolType.CHOICE.accentColor.copy(alpha = 0.2f),
+                                        selectedLabelColor = ToolType.CHOICE.accentColor
+                                    )
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // LINE 2: User-Made Presets (Separate line with custom presets)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                "My Presets",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold
+                            )
+                            TextButton(
+                                onClick = { showSavePresetDialog = true },
+                                contentPadding = PaddingValues(horizontal = 6.dp)
+                            ) {
+                                Icon(Icons.Default.Save, contentDescription = null, modifier = Modifier.size(15.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Save Current", style = MaterialTheme.typography.labelSmall)
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        if (userPresets.isEmpty()) {
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    text = "No custom presets yet. Tap 'Save Current' to save your list!",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)
+                                )
+                            }
+                        } else {
+                            LazyRow(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                items(userPresets) { preset ->
+                                    val isPresetActive = options.toList() == preset.getItems()
+                                    FilterChip(
+                                        selected = isPresetActive,
+                                        onClick = {
+                                            options.clear()
+                                            options.addAll(preset.getItems())
+                                            selectedWinner = null
+                                            persistCurrentOptions()
+                                            viewModel.showMessage("Loaded: ${preset.presetName}")
+                                        },
+                                        label = {
+                                            Text(
+                                                preset.presetName,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                        },
+                                        colors = FilterChipDefaults.filterChipColors(
+                                            selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                            selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer
+                                        ),
+                                        trailingIcon = {
+                                            IconButton(
+                                                onClick = { presetToDelete = preset },
+                                                modifier = Modifier.size(18.dp)
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Clear,
+                                                    contentDescription = "Delete preset",
+                                                    tint = MaterialTheme.colorScheme.error
+                                                )
+                                            }
+                                        }
+                                    )
+                                }
+                            }
                         }
                     }
                 }

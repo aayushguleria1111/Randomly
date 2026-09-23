@@ -28,6 +28,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -37,6 +38,12 @@ class RandomlyViewModel(
 ) : AndroidViewModel(application) {
 
     var hasShownSplash: Boolean = false
+
+    init {
+        viewModelScope.launch {
+            repository.ensureCleanPresets()
+        }
+    }
 
     val settings: StateFlow<AppSettings> = repository.settings.stateIn(
         viewModelScope,
@@ -121,7 +128,11 @@ class RandomlyViewModel(
     }
 
     fun getPresetsForTool(toolId: String): Flow<List<ToolPreset>> {
-        return repository.getPresetsForTool(toolId)
+        return repository.getPresetsForTool(toolId).map { list ->
+            val builtIn = list.filter { it.isBuiltIn }.distinctBy { it.presetName }.take(3)
+            val custom = list.filter { !it.isBuiltIn }.distinctBy { it.id }
+            builtIn + custom
+        }
     }
 
     fun savePreset(toolId: String, name: String, items: List<String>) {

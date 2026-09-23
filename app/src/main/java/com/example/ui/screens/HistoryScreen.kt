@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -78,6 +79,7 @@ fun HistoryScreen(
     val timeFormatter = remember { SimpleDateFormat("MMM d, h:mm a", Locale.getDefault()) }
 
     Scaffold(
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             TopAppBar(
                 title = {
@@ -106,15 +108,15 @@ fun HistoryScreen(
                 onActionClick = onNavigateToHome,
                 modifier = modifier
                     .fillMaxSize()
-                    .padding(innerPadding)
+                    .padding(top = innerPadding.calculateTopPadding())
             )
         } else {
             LazyColumn(
                 modifier = modifier
                     .fillMaxSize()
-                    .padding(innerPadding)
+                    .padding(top = innerPadding.calculateTopPadding())
                     .padding(horizontal = 12.dp),
-                contentPadding = PaddingValues(vertical = 10.dp),
+                contentPadding = PaddingValues(top = 4.dp, bottom = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 // Filter chips

@@ -1,19 +1,15 @@
 package com.example.ui.components
 
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -22,14 +18,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.example.R
 
 /**
  * The official branding logo component for Randomly:
- * Represents the Prismatic Isometric Lucky Cube with Orbital Fortune Star.
+ * Represents the iconic Two Lucky Dice logo with authentic dynamic physics.
  */
 @Composable
 fun AppLogo(
@@ -39,27 +33,18 @@ fun AppLogo(
 ) {
     if (animated) {
         val infiniteTransition = rememberInfiniteTransition(label = "AppLogoPulse")
-        val pulseScale by infiniteTransition.animateFloat(
-            initialValue = 0.97f,
-            targetValue = 1.04f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(2200, easing = FastOutSlowInEasing),
-                repeatMode = RepeatMode.Reverse
-            ),
-            label = "LogoScale"
-        )
         val haloAlpha by infiniteTransition.animateFloat(
-            initialValue = 0.25f,
-            targetValue = 0.55f,
+            initialValue = 0.20f,
+            targetValue = 0.45f,
             animationSpec = infiniteRepeatable(
-                animation = tween(2200, easing = FastOutSlowInEasing),
+                animation = tween(2000, easing = FastOutSlowInEasing),
                 repeatMode = RepeatMode.Reverse
             ),
             label = "HaloAlpha"
         )
 
         Box(
-            modifier = modifier.size(size * 1.25f),
+            modifier = modifier.size(size * 1.2f),
             contentAlignment = Alignment.Center
         ) {
             // Ambient glowing radial halo
@@ -71,31 +56,23 @@ fun AppLogo(
                         brush = Brush.radialGradient(
                             colors = listOf(
                                 Color(0xFF6366F1).copy(alpha = haloAlpha),
-                                Color(0xFFA855F7).copy(alpha = haloAlpha * 0.5f),
+                                Color(0xFFA855F7).copy(alpha = haloAlpha * 0.4f),
                                 Color.Transparent
                             )
                         )
                     )
             )
 
-            Image(
-                painter = painterResource(R.drawable.ic_app_logo),
-                contentDescription = "Randomly App Logo",
-                modifier = Modifier
-                    .size(size)
-                    .scale(pulseScale)
+            TwoDiceLogo(
+                size = size,
+                animated = true
             )
         }
     } else {
-        Box(
-            modifier = modifier.size(size),
-            contentAlignment = Alignment.Center
-        ) {
-            Image(
-                painter = painterResource(R.drawable.ic_app_logo),
-                contentDescription = "Randomly App Logo",
-                modifier = Modifier.size(size)
-            )
-        }
+        TwoDiceLogo(
+            size = size,
+            animated = false,
+            modifier = modifier
+        )
     }
 }

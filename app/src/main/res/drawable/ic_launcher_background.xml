@@ -24,17 +24,17 @@
         </aapt:attr>
     </path>
 
-    <!-- Ambient Radial Glow Flare at Top-Center -->
+    <!-- Ambient Radial Glow Flare at Center -->
     <path
-        android:pathData="M54,42m-42,0a42,42 0 1,0 84,0a42,42 0 1,0 -84,0">
+        android:pathData="M54,54m-44,0a44,44 0 1,0 88,0a44,44 0 1,0 -88,0">
         <aapt:attr name="android:fillColor">
             <gradient
                 android:centerX="54"
-                android:centerY="42"
-                android:gradientRadius="42"
+                android:centerY="54"
+                android:gradientRadius="44"
                 android:type="radial">
-                <item android:offset="0.0" android:color="#356366F1" />
-                <item android:offset="0.6" android:color="#15818CF8" />
+                <item android:offset="0.0" android:color="#406366F1" />
+                <item android:offset="0.6" android:color="#18818CF8" />
                 <item android:offset="1.0" android:color="#00000000" />
             </gradient>
         </aapt:attr>
