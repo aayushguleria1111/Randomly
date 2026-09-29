@@ -1,11 +1,13 @@
 package com.example.ui.navigation
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Casino
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Settings
@@ -19,6 +21,7 @@ sealed class Screen(
     val unselectedIcon: ImageVector
 ) {
     data object Home : Screen("home", "Tools", Icons.Filled.Home, Icons.Outlined.Home)
+    data object AiChoice : Screen("ai_choice", "AI Choice", Icons.Filled.AutoAwesome, Icons.Outlined.AutoAwesome)
     data object Favorites : Screen("favorites", "Favorites", Icons.Filled.Star, Icons.Outlined.StarBorder)
     data object History : Screen("history", "History", Icons.Filled.History, Icons.Outlined.History)
     data object Settings : Screen("settings", "Settings", Icons.Filled.Settings, Icons.Outlined.Settings)
@@ -42,6 +45,7 @@ sealed class Screen(
 
 val BottomNavScreens = listOf(
     Screen.Home,
+    Screen.AiChoice,
     Screen.Favorites,
     Screen.History,
     Screen.Settings

@@ -5,6 +5,7 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.example.data.model.AiChoiceItem
 import com.example.data.model.FavoriteItem
 import com.example.data.model.HistoryItem
 import com.example.data.model.SavedList
@@ -20,9 +21,10 @@ import kotlinx.coroutines.launch
         FavoriteItem::class,
         SavedList::class,
         ToolUsage::class,
-        ToolPreset::class
+        ToolPreset::class,
+        AiChoiceItem::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -31,6 +33,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun savedListDao(): SavedListDao
     abstract fun toolUsageDao(): ToolUsageDao
     abstract fun toolPresetDao(): ToolPresetDao
+    abstract fun aiChoiceDao(): AiChoiceDao
 
     companion object {
         @Volatile

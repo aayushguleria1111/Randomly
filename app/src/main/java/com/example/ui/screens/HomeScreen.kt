@@ -26,6 +26,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Casino
 import androidx.compose.material.icons.filled.Clear
@@ -82,6 +83,7 @@ import java.security.SecureRandom
 fun HomeScreen(
     viewModel: RandomlyViewModel,
     onNavigateToTool: (ToolType) -> Unit,
+    onNavigateToAiChoice: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -128,7 +130,6 @@ fun HomeScreen(
             )
             val random = SecureRandom()
             val pickedTool = allTools[random.nextInt(allTools.size)]
-            viewModel.recordToolOpen(pickedTool.id)
             onNavigateToTool(pickedTool)
         }
     }
@@ -202,7 +203,6 @@ fun HomeScreen(
                                         tool = tool,
                                         isFavorite = true,
                                         onToolClick = {
-                                            viewModel.recordToolOpen(tool.id)
                                             onNavigateToTool(tool)
                                         },
                                         onFavoriteClick = { viewModel.toggleFavorite(tool) },
@@ -283,6 +283,89 @@ fun HomeScreen(
                 }
             }
 
+            // AI Choice Spotlight Banner
+            if (searchQuery.isBlank() && selectedCategory == null) {
+                item(span = { GridItemSpan(2) }) {
+                    Card(
+                        onClick = onNavigateToAiChoice,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("ai_choice_banner"),
+                        shape = RoundedCornerShape(20.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f)
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(14.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(42.dp)
+                                    .clip(CircleShape)
+                                    .background(
+                                        Brush.linearGradient(
+                                            listOf(
+                                                MaterialTheme.colorScheme.primary,
+                                                MaterialTheme.colorScheme.tertiary
+                                            )
+                                        )
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.AutoAwesome,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onPrimary,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = "AI Choice",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(6.dp))
+                                            .background(MaterialTheme.colorScheme.primary)
+                                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                                    ) {
+                                        Text(
+                                            text = "REAL-TIME",
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontSize = 9.sp,
+                                                fontWeight = FontWeight.ExtraBold
+                                            ),
+                                            color = MaterialTheme.colorScheme.onPrimary
+                                        )
+                                    }
+                                }
+                                Text(
+                                    text = "Ask real-time questions for a single, reasoned choice.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f)
+                                )
+                            }
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+                }
+            }
+
             // 3. Real Most Used Tools Section (Tracking actual user counts in decreasing order)
             if (mostUsedTools.isNotEmpty() && searchQuery.isBlank() && selectedCategory == null) {
                 item(span = { GridItemSpan(2) }) {
@@ -315,7 +398,6 @@ fun HomeScreen(
                                             .fillMaxWidth()
                                             .clickable {
                                                 AudioHapticFeedback.onToolClick(context, settings.soundEffectsEnabled, settings.hapticsEnabled)
-                                                viewModel.recordToolOpen(tool.id)
                                                 onNavigateToTool(tool)
                                             },
                                         shape = RoundedCornerShape(16.dp),
@@ -485,7 +567,6 @@ fun HomeScreen(
                         tool = tool,
                         isFavorite = isFav,
                         onToolClick = {
-                            viewModel.recordToolOpen(tool.id)
                             onNavigateToTool(tool)
                         },
                         onFavoriteClick = { viewModel.toggleFavorite(tool) }

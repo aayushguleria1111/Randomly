@@ -46,6 +46,7 @@ private val WheelPalette = listOf(
 @Composable
 fun SpinWheelCanvas(
     items: List<String>,
+    weights: List<Int> = emptyList(),
     currentRotation: Float,
     isSpinning: Boolean,
     onClick: () -> Unit = {},
@@ -66,7 +67,12 @@ fun SpinWheelCanvas(
         contentAlignment = Alignment.Center
     ) {
         val count = items.size.coerceAtLeast(1)
-        val sweepAngle = 360f / count
+        val safeWeights = if (weights.size == items.size && weights.isNotEmpty()) {
+            weights.map { it.coerceIn(1, 99) }
+        } else {
+            List(count) { 1 }
+        }
+        val totalWeight = safeWeights.sum().coerceAtLeast(1)
 
         Canvas(modifier = Modifier.fillMaxSize()) {
             val canvasSize = size.minDimension
@@ -102,9 +108,18 @@ fun SpinWheelCanvas(
 
             val innerRadius = radius - 8f
 
+            // Compute sector start and sweep angles
+            var accumulatedAngle = currentRotation
+            val sectorAngles = safeWeights.map { w ->
+                val sweep = 360f * (w.toFloat() / totalWeight.toFloat())
+                val start = accumulatedAngle
+                accumulatedAngle += sweep
+                Pair(start, sweep)
+            }
+
             // Draw sectors
             for (i in 0 until count) {
-                val startAngle = currentRotation + (i * sweepAngle)
+                val (startAngle, sweepAngle) = sectorAngles[i]
                 val color = WheelPalette[i % WheelPalette.size]
 
                 drawArc(

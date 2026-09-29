@@ -24,10 +24,12 @@ import com.example.data.repository.RandomlyRepository
 import com.example.util.AudioHapticFeedback
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -74,6 +76,18 @@ class RandomlyViewModel(
         SharingStarted.WhileSubscribed(5000),
         emptyList()
     )
+
+    val aiChoices: StateFlow<List<com.example.data.model.AiChoiceItem>> = repository.allAiChoices.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5000),
+        emptyList()
+    )
+
+    private val _isAiThinking = MutableStateFlow(false)
+    val isAiThinking: StateFlow<Boolean> = _isAiThinking.asStateFlow()
+
+    private val _aiError = MutableStateFlow<String?>(null)
+    val aiError: StateFlow<String?> = _aiError.asStateFlow()
 
     private val _snackbarMessage = MutableSharedFlow<String>()
     val snackbarMessage: SharedFlow<String> = _snackbarMessage.asSharedFlow()
@@ -122,9 +136,7 @@ class RandomlyViewModel(
     }
 
     fun recordToolOpen(toolId: String) {
-        viewModelScope.launch {
-            repository.recordToolOpen(toolId)
-        }
+        // Usage count is updated ONLY when the tool is actually used via recordResult
     }
 
     fun getPresetsForTool(toolId: String): Flow<List<ToolPreset>> {
@@ -246,6 +258,45 @@ class RandomlyViewModel(
         }
     }
 
+    fun askAiChoice(
+        query: String,
+        preferenceMode: String,
+        customContext: String = "",
+        onSuccess: ((com.example.data.model.AiChoiceItem) -> Unit)? = null
+    ) {
+        if (query.isBlank()) return
+        viewModelScope.launch {
+            _isAiThinking.value = true
+            _aiError.value = null
+            try {
+                val result = repository.askAiChoice(query.trim(), preferenceMode, customContext.trim())
+                result.onSuccess { item ->
+                    onSuccess?.invoke(item)
+                }.onFailure { error ->
+                    _aiError.value = error.message ?: "Failed to generate decision"
+                    showMessage("Error: ${error.message}")
+                }
+            } catch (e: Exception) {
+                _aiError.value = e.message ?: "An unexpected error occurred"
+            } finally {
+                _isAiThinking.value = false
+            }
+        }
+    }
+
+    fun deleteAiChoice(id: Long) {
+        viewModelScope.launch {
+            repository.deleteAiChoice(id)
+        }
+    }
+
+    fun clearAllAiChoices() {
+        viewModelScope.launch {
+            repository.clearAllAiChoices()
+            showMessage("AI Choice history cleared")
+        }
+    }
+
     companion object {
         fun provideFactory(application: Application): ViewModelProvider.Factory =
             object : ViewModelProvider.Factory {
@@ -259,6 +310,7 @@ class RandomlyViewModel(
                         savedListDao = db.savedListDao(),
                         toolUsageDao = db.toolUsageDao(),
                         toolPresetDao = db.toolPresetDao(),
+                        aiChoiceDao = db.aiChoiceDao(),
                         dataStoreManager = dataStoreManager
                     )
                     return RandomlyViewModel(application, repository) as T

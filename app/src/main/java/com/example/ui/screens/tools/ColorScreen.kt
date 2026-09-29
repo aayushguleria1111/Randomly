@@ -52,14 +52,35 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import com.example.data.model.ToolType
 import com.example.ui.theme.AmberAccent
+
+import androidx.compose.material3.Surface
 import com.example.ui.viewmodel.RandomlyViewModel
 import com.example.util.HapticFeedbackUtil
 import com.example.util.ShareUtil
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.security.SecureRandom
+
+enum class ColorFocusMode(
+    val title: String,
+    val description: String,
+    val dotColor: Color
+) {
+    FULL_SPECTRUM("Full Spectrum", "Any color across 16.7M RGB gamut", Color(0xFF6366F1)),
+    WARM_FOCUS("Warm Focus", "Weighted towards Reds, Oranges & Warm Ambers", Color(0xFFEA580C)),
+    COOL_FOCUS("Cool Focus", "Weighted towards Blues, Teals & Cyans", Color(0xFF0284C7)),
+    NATURE_FOCUS("Nature Focus", "Weighted towards Greens, Emeralds & Olive", Color(0xFF059669)),
+    PASTEL_FOCUS("Pastel Focus", "Soft, gentle pastel tints with high brightness", Color(0xFFF472B6)),
+    NEON_FOCUS("Neon / Vibrant", "Max saturation and intense electric luminance", Color(0xFF10B981)),
+    DEEP_FOCUS("Deep / Moody", "Rich, dark, deep tones with bold presence", Color(0xFF4338CA))
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -71,11 +92,55 @@ fun ColorScreen(
     val settings by viewModel.settings.collectAsState()
     val isFavorite = viewModel.isToolFavorite(ToolType.COLOR.id)
 
+    var selectedFocus by remember { mutableStateOf(ColorFocusMode.FULL_SPECTRUM) }
     var currentColor by remember { mutableStateOf(Color(0xFF6366F1)) }
     var isBlending by remember { mutableStateOf(false) }
     val scope = androidx.compose.runtime.rememberCoroutineScope()
     val colorScale = remember { androidx.compose.animation.core.Animatable(1f) }
     val colorRotation = remember { androidx.compose.animation.core.Animatable(0f) }
+
+    fun sampleColorWithFocus(focus: ColorFocusMode, random: SecureRandom): Color {
+        val hsv = FloatArray(3)
+        when (focus) {
+            ColorFocusMode.FULL_SPECTRUM -> {
+                hsv[0] = random.nextFloat() * 360f
+                hsv[1] = 0.45f + random.nextFloat() * 0.55f
+                hsv[2] = 0.45f + random.nextFloat() * 0.55f
+            }
+            ColorFocusMode.WARM_FOCUS -> {
+                hsv[0] = if (random.nextBoolean()) random.nextFloat() * 50f else 340f + random.nextFloat() * 20f
+                hsv[1] = 0.65f + random.nextFloat() * 0.35f
+                hsv[2] = 0.70f + random.nextFloat() * 0.30f
+            }
+            ColorFocusMode.COOL_FOCUS -> {
+                hsv[0] = 175f + random.nextFloat() * 100f
+                hsv[1] = 0.60f + random.nextFloat() * 0.40f
+                hsv[2] = 0.65f + random.nextFloat() * 0.35f
+            }
+            ColorFocusMode.NATURE_FOCUS -> {
+                hsv[0] = 75f + random.nextFloat() * 90f
+                hsv[1] = 0.55f + random.nextFloat() * 0.45f
+                hsv[2] = 0.55f + random.nextFloat() * 0.40f
+            }
+            ColorFocusMode.PASTEL_FOCUS -> {
+                hsv[0] = random.nextFloat() * 360f
+                hsv[1] = 0.20f + random.nextFloat() * 0.25f
+                hsv[2] = 0.88f + random.nextFloat() * 0.12f
+            }
+            ColorFocusMode.NEON_FOCUS -> {
+                hsv[0] = random.nextFloat() * 360f
+                hsv[1] = 0.90f + random.nextFloat() * 0.10f
+                hsv[2] = 0.90f + random.nextFloat() * 0.10f
+            }
+            ColorFocusMode.DEEP_FOCUS -> {
+                hsv[0] = random.nextFloat() * 360f
+                hsv[1] = 0.60f + random.nextFloat() * 0.40f
+                hsv[2] = 0.25f + random.nextFloat() * 0.30f
+            }
+        }
+        val argb = android.graphics.Color.HSVToColor(hsv)
+        return Color(argb)
+    }
 
     fun generateColor() {
         if (isBlending) return
@@ -85,7 +150,7 @@ fun ColorScreen(
             if (settings.animationsEnabled) {
                 val cycleJob = launch {
                     for (i in 1..6) {
-                        currentColor = Color(random.nextInt(256), random.nextInt(256), random.nextInt(256))
+                        currentColor = sampleColorWithFocus(selectedFocus, random)
                         HapticFeedbackUtil.performImpact(context, settings.hapticsEnabled)
                         kotlinx.coroutines.delay(60)
                     }
@@ -97,10 +162,7 @@ fun ColorScreen(
                 scaleJob.join()
             }
 
-            val r = random.nextInt(256)
-            val g = random.nextInt(256)
-            val b = random.nextInt(256)
-            val color = Color(r, g, b)
+            val color = sampleColorWithFocus(selectedFocus, random)
             currentColor = color
             isBlending = false
             HapticFeedbackUtil.performSuccess(context, settings.hapticsEnabled)
@@ -115,12 +177,16 @@ fun ColorScreen(
                 )
             }
 
+            val r = (color.red * 255).toInt()
+            val g = (color.green * 255).toInt()
+            val b = (color.blue * 255).toInt()
             val hex = String.format("#%02X%02X%02X", r, g, b)
+            val focusSuffix = if (selectedFocus == ColorFocusMode.FULL_SPECTRUM) "" else " • Focus: ${selectedFocus.title}"
             viewModel.recordResult(
                 toolType = ToolType.COLOR,
                 title = "Random Color",
                 result = hex,
-                details = "RGB: ($r, $g, $b)"
+                details = "RGB: ($r, $g, $b)$focusSuffix"
             )
         }
     }
@@ -188,12 +254,29 @@ fun ColorScreen(
                                 .background(Color.Black.copy(alpha = 0.5f))
                                 .padding(horizontal = 14.dp, vertical = 8.dp)
                         ) {
-                            Text(
-                                text = hexString,
-                                style = MaterialTheme.typography.headlineSmall,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = Color.White
-                            )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = hexString,
+                                    style = MaterialTheme.typography.headlineSmall,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = Color.White
+                                )
+                                if (selectedFocus != ColorFocusMode.FULL_SPECTRUM) {
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Surface(
+                                        shape = RoundedCornerShape(6.dp),
+                                        color = Color.White.copy(alpha = 0.25f)
+                                    ) {
+                                        Text(
+                                            text = selectedFocus.title,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = Color.White,
+                                            fontWeight = FontWeight.Bold,
+                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                        )
+                                    }
+                                }
+                            }
                             Text(
                                 text = rgbString,
                                 style = MaterialTheme.typography.bodyMedium,
@@ -224,6 +307,70 @@ fun ColorScreen(
                         fontWeight = FontWeight.Bold,
                         color = Color.White
                     )
+                }
+            }
+
+            // Color Focus & Weighting Card
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Color Focus & Weighting",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            if (selectedFocus != ColorFocusMode.FULL_SPECTRUM) {
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = selectedFocus.dotColor.copy(alpha = 0.15f)
+                                ) {
+                                    Text(
+                                        text = selectedFocus.title,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = selectedFocus.dotColor,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = selectedFocus.description,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            items(ColorFocusMode.entries.toTypedArray()) { focus ->
+                                FilterChip(
+                                    selected = selectedFocus == focus,
+                                    onClick = { selectedFocus = focus },
+                                    label = { Text(focus.title) },
+                                    leadingIcon = {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(12.dp)
+                                                .clip(CircleShape)
+                                                .background(focus.dotColor)
+                                        )
+                                    }
+                                )
+                            }
+                        }
+                    }
                 }
             }
 

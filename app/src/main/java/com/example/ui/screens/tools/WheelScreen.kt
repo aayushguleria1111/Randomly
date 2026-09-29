@@ -34,6 +34,13 @@ import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Shuffle
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Remove
+import androidx.compose.ui.text.input.KeyboardType
+import com.example.data.model.WeightedListItem
+import java.util.Locale
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -98,24 +105,47 @@ fun WheelScreen(
 
     val dbPresets by viewModel.getPresetsForTool(ToolType.SPIN_WHEEL.id).collectAsState(initial = emptyList())
 
-    val defaultItems = remember { listOf("Pizza", "Burger", "Sushi", "Tacos", "Pasta", "Salad") }
-    val items = remember { mutableStateListOf<String>().apply { addAll(defaultItems) } }
+    val defaultItems = remember {
+        listOf(
+            WeightedListItem(text = "Pizza", weight = 1),
+            WeightedListItem(text = "Burger", weight = 1),
+            WeightedListItem(text = "Sushi", weight = 1),
+            WeightedListItem(text = "Tacos", weight = 1),
+            WeightedListItem(text = "Pasta", weight = 1),
+            WeightedListItem(text = "Salad", weight = 1)
+        )
+    }
+    val items = remember { mutableStateListOf<WeightedListItem>().apply { addAll(defaultItems) } }
     var hasLoadedLastUsed by remember { mutableStateOf(false) }
 
     // Load persisted last used items
     LaunchedEffect(Unit) {
-        viewModel.getLastUsedItems(ToolType.SPIN_WHEEL.id, defaultItems).collect { saved ->
+        viewModel.getLastUsedItems(ToolType.SPIN_WHEEL.id, defaultItems.map { it.toSerialized() }).collect { saved ->
             if (!hasLoadedLastUsed && saved.isNotEmpty()) {
                 items.clear()
-                items.addAll(saved)
+                items.addAll(saved.map { WeightedListItem.fromSerialized(it) })
                 hasLoadedLastUsed = true
             }
         }
     }
 
     fun persistCurrentItems() {
-        viewModel.saveLastUsedItems(ToolType.SPIN_WHEEL.id, items.toList())
+        viewModel.saveLastUsedItems(ToolType.SPIN_WHEEL.id, items.map { it.toSerialized() })
     }
+
+    val totalWeight = items.sumOf { it.weight.coerceIn(WeightedListItem.MIN_WEIGHT, WeightedListItem.MAX_WEIGHT) }.coerceAtLeast(1)
+    val hasCustomWeights = items.any { it.weight > 1 }
+
+    fun resetAllWeights() {
+        for (i in items.indices) {
+            items[i] = items[i].copy(weight = 1)
+        }
+        persistCurrentItems()
+        viewModel.showMessage("All weights reset to 1×")
+    }
+
+    var editingItemIndex by remember { androidx.compose.runtime.mutableIntStateOf(-1) }
+    var editWeightDialogText by remember { mutableStateOf("1") }
 
     var newItemText by remember { mutableStateOf("") }
     var removeWinnerAfterSpin by remember { mutableStateOf(false) }
@@ -136,10 +166,25 @@ fun WheelScreen(
 
         scope.launch {
             val random = SecureRandom()
-            val selectedIndex = random.nextInt(items.size)
-            val sweepAngle = 360f / items.size
-            
-            val sectorCenterOffset = selectedIndex * sweepAngle + sweepAngle / 2f
+            // Sample weighted winner
+            val selectedItem = WeightedListItem.sampleWeighted(
+                items = items.toList(),
+                count = 1,
+                allowDuplicates = false,
+                random = random
+            ).firstOrNull() ?: items.first()
+
+            val selectedIndex = items.indexOfFirst { it.id == selectedItem.id }.takeIf { it >= 0 } ?: 0
+
+            // Sector angles calculation based on weights
+            val safeWeights = items.map { it.weight.coerceIn(WeightedListItem.MIN_WEIGHT, WeightedListItem.MAX_WEIGHT) }
+            val currentTotal = safeWeights.sum().coerceAtLeast(1)
+            var startOffset = 0f
+            for (i in 0 until selectedIndex) {
+                startOffset += 360f * (safeWeights[i].toFloat() / currentTotal.toFloat())
+            }
+            val sweepAngle = 360f * (safeWeights[selectedIndex].toFloat() / currentTotal.toFloat())
+            val sectorCenterOffset = startOffset + sweepAngle / 2f
             val targetAngleModulo = (270f - sectorCenterOffset + 360f) % 360f
 
             val extraFullSpins = (5 + random.nextInt(4)) * 360f
@@ -157,18 +202,25 @@ fun WheelScreen(
                 )
             )
 
-            val winner = items[selectedIndex]
+            val winner = selectedItem.text
             winningItem = winner
             isSpinning = false
             showWinnerDialog = true
 
             HapticFeedbackUtil.performSuccess(context, settings.hapticsEnabled)
 
+            val detailsStr = if (hasCustomWeights) {
+                val pct = String.format(Locale.US, "%.1f", (selectedItem.weight.toFloat() / currentTotal.toFloat()) * 100f)
+                "Winner: $winner (${selectedItem.weight}× weight, $pct% chance) • Out of ${items.size} options"
+            } else {
+                "Out of ${items.size} options"
+            }
+
             viewModel.recordResult(
                 toolType = ToolType.SPIN_WHEEL,
                 title = "Spin Wheel",
                 result = winner,
-                details = "Out of ${items.size} options"
+                details = detailsStr
             )
 
             if (removeWinnerAfterSpin && items.size > 1) {
@@ -266,15 +318,16 @@ fun WheelScreen(
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = "•  ${items.size} SLICES",
+                                    text = if (hasCustomWeights) "•  ${items.size} SLICES (WEIGHTED)" else "•  ${items.size} SLICES",
                                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = if (hasCustomWeights) ToolType.SPIN_WHEEL.accentColor else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
 
                         SpinWheelCanvas(
-                            items = items,
+                            items = items.map { it.text },
+                            weights = items.map { it.weight },
                             currentRotation = rotation.value,
                             isSpinning = isSpinning,
                             onClick = { spinWheel() }
@@ -391,13 +444,13 @@ fun WheelScreen(
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             items(builtInPresets) { preset ->
-                                val isPresetActive = items.toList() == preset.getItems()
+                                val isPresetActive = items.map { it.toSerialized() } == preset.getItems()
                                 FilterChip(
                                     selected = isPresetActive,
                                     onClick = {
                                         if (!isSpinning) {
                                             items.clear()
-                                            items.addAll(preset.getItems())
+                                            items.addAll(preset.getItems().map { WeightedListItem.fromSerialized(it) })
                                             persistCurrentItems()
                                             viewModel.showMessage("Loaded: ${preset.presetName}")
                                         }
@@ -461,13 +514,13 @@ fun WheelScreen(
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 items(userPresets) { preset ->
-                                    val isPresetActive = items.toList() == preset.getItems()
+                                    val isPresetActive = items.map { it.toSerialized() } == preset.getItems()
                                     FilterChip(
                                         selected = isPresetActive,
                                         onClick = {
                                             if (!isSpinning) {
                                                 items.clear()
-                                                items.addAll(preset.getItems())
+                                                items.addAll(preset.getItems().map { WeightedListItem.fromSerialized(it) })
                                                 persistCurrentItems()
                                                 viewModel.showMessage("Loaded: ${preset.presetName}")
                                             }
@@ -519,12 +572,31 @@ fun WheelScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                "Wheel Entries (${items.size})",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Row {
+                            Column {
+                                Text(
+                                    "Wheel Entries (${items.size})",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                if (hasCustomWeights) {
+                                    Text(
+                                        text = "Total weight: $totalWeight",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = ToolType.SPIN_WHEEL.accentColor
+                                    )
+                                }
+                            }
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (hasCustomWeights) {
+                                    TextButton(
+                                        onClick = { resetAllWeights() },
+                                        contentPadding = PaddingValues(horizontal = 6.dp)
+                                    ) {
+                                        Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(14.dp))
+                                        Spacer(modifier = Modifier.width(3.dp))
+                                        Text("Reset 1×", style = MaterialTheme.typography.labelSmall)
+                                    }
+                                }
                                 IconButton(onClick = {
                                     if (!isSpinning && items.isNotEmpty()) {
                                         items.shuffle()
@@ -568,7 +640,7 @@ fun WheelScreen(
                             Button(
                                 onClick = {
                                     if (newItemText.isNotBlank()) {
-                                        items.add(newItemText.trim())
+                                        items.add(WeightedListItem(text = newItemText.trim(), weight = 1))
                                         newItemText = ""
                                         persistCurrentItems()
                                     }
@@ -618,29 +690,94 @@ fun WheelScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 14.dp, vertical = 8.dp),
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = "${index + 1}. $item",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Medium,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f)
-                        )
-                        IconButton(onClick = {
-                            if (!isSpinning) {
-                                items.removeAt(index)
-                                persistCurrentItems()
-                            }
-                        }) {
-                            Icon(
-                                Icons.Default.Delete,
-                                contentDescription = "Delete",
-                                tint = MaterialTheme.colorScheme.error.copy(alpha = 0.8f)
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "${index + 1}. ${item.text}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
+                            val pct = (item.weight.toFloat() / totalWeight.toFloat()) * 100f
+                            Text(
+                                text = String.format(Locale.US, "%.1f%% chance", pct),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = if (item.weight > 1) ToolType.SPIN_WHEEL.accentColor else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        // Weight adjustments & delete
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            IconButton(
+                                onClick = {
+                                    if (!isSpinning && item.weight > 1) {
+                                        items[index] = item.copy(weight = item.weight - 1)
+                                        persistCurrentItems()
+                                    }
+                                },
+                                enabled = !isSpinning && item.weight > 1,
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(Icons.Default.Remove, contentDescription = "Decrease weight", modifier = Modifier.size(16.dp))
+                            }
+
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = if (item.weight > 1) ToolType.SPIN_WHEEL.accentColor.copy(alpha = 0.18f) else MaterialTheme.colorScheme.surfaceVariant,
+                                border = BorderStroke(1.dp, if (item.weight > 1) ToolType.SPIN_WHEEL.accentColor.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outlineVariant),
+                                modifier = Modifier
+                                    .clickable {
+                                        if (!isSpinning) {
+                                            editingItemIndex = index
+                                            editWeightDialogText = item.weight.toString()
+                                        }
+                                    }
+                                    .padding(horizontal = 2.dp)
+                            ) {
+                                Text(
+                                    text = "${item.weight}×",
+                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                    color = if (item.weight > 1) ToolType.SPIN_WHEEL.accentColor else MaterialTheme.colorScheme.onSurface,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                )
+                            }
+
+                            IconButton(
+                                onClick = {
+                                    if (!isSpinning && item.weight < 99) {
+                                        items[index] = item.copy(weight = item.weight + 1)
+                                        persistCurrentItems()
+                                    }
+                                },
+                                enabled = !isSpinning && item.weight < 99,
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(Icons.Default.Add, contentDescription = "Increase weight", modifier = Modifier.size(16.dp))
+                            }
+
+                            IconButton(
+                                onClick = {
+                                    if (!isSpinning) {
+                                        items.removeAt(index)
+                                        persistCurrentItems()
+                                    }
+                                },
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.Delete,
+                                    contentDescription = "Delete",
+                                    tint = MaterialTheme.colorScheme.error.copy(alpha = 0.8f),
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
                         }
                     }
                 }
@@ -718,7 +855,7 @@ fun WheelScreen(
                             viewModel.savePreset(
                                 toolId = ToolType.SPIN_WHEEL.id,
                                 name = newPresetNameInput.trim(),
-                                items = items.toList()
+                                items = items.map { it.toSerialized() }
                             )
                             newPresetNameInput = ""
                             showSavePresetDialog = false
@@ -730,6 +867,47 @@ fun WheelScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showSavePresetDialog = false }) { Text("Cancel") }
+            }
+        )
+    }
+
+    // Direct Edit Weight Dialog
+    if (editingItemIndex in items.indices) {
+        val currentItem = items[editingItemIndex]
+        AlertDialog(
+            onDismissRequest = { editingItemIndex = -1 },
+            title = { Text("Set Weight for '${currentItem.text}'") },
+            text = {
+                Column {
+                    Text(
+                        "Higher weight increases this slice's angle on the wheel and the probability of landing on it.",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = editWeightDialogText,
+                        onValueChange = { editWeightDialogText = it.filter { ch -> ch.isDigit() }.take(2) },
+                        label = { Text("Weight (1-99)") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val parsed = editWeightDialogText.toIntOrNull()?.coerceIn(1, 99) ?: 1
+                        items[editingItemIndex] = currentItem.copy(weight = parsed)
+                        persistCurrentItems()
+                        editingItemIndex = -1
+                    }
+                ) {
+                    Text("Set Weight")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { editingItemIndex = -1 }) { Text("Cancel") }
             }
         )
     }

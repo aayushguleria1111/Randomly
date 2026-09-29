@@ -5,6 +5,15 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
 
+    <!-- Centered and balanced group for circular and adaptive icon boundaries -->
+    <group
+        android:pivotX="54"
+        android:pivotY="54"
+        android:scaleX="0.82"
+        android:scaleY="0.82"
+        android:translateX="-2.0"
+        android:translateY="-2.5">
+
     <!-- 1. Ambient Ground Shadow under Both Dice (Centered at X=54, Y=72.5) -->
     <path
         android:fillColor="#32000000"
@@ -131,5 +140,7 @@
     <path
         android:fillColor="#A78BFA"
         android:pathData="M 32,32 L 32.8,33.4 L 34,34 L 32.8,34.6 L 32,36 L 31.2,34.6 L 30,34 L 31.2,33.4 Z" />
+
+    </group>
 
 </vector>

@@ -1,11 +1,14 @@
 package com.example.data.repository
 
+import com.example.data.api.GeminiApiClient
+import com.example.data.local.AiChoiceDao
 import com.example.data.local.DataStoreManager
 import com.example.data.local.FavoritesDao
 import com.example.data.local.HistoryDao
 import com.example.data.local.SavedListDao
 import com.example.data.local.ToolPresetDao
 import com.example.data.local.ToolUsageDao
+import com.example.data.model.AiChoiceItem
 import com.example.data.model.AppColorTheme
 import com.example.data.model.AppSettings
 import com.example.data.model.AppTextSize
@@ -24,12 +27,14 @@ class RandomlyRepository(
     private val savedListDao: SavedListDao,
     private val toolUsageDao: ToolUsageDao,
     private val toolPresetDao: ToolPresetDao,
+    private val aiChoiceDao: AiChoiceDao,
     private val dataStoreManager: DataStoreManager
 ) {
     val allHistory: Flow<List<HistoryItem>> = historyDao.getAllHistory()
     val allFavorites: Flow<List<FavoriteItem>> = favoritesDao.getAllFavorites()
     val allSavedLists: Flow<List<SavedList>> = savedListDao.getAllSavedLists()
     val mostUsedTools: Flow<List<ToolUsage>> = toolUsageDao.getMostUsedTools()
+    val allAiChoices: Flow<List<AiChoiceItem>> = aiChoiceDao.getAllChoices()
     val settings: Flow<AppSettings> = dataStoreManager.settingsFlow
 
     fun getHistoryForTool(toolType: String, limit: Int = 10): Flow<List<HistoryItem>> {
@@ -63,7 +68,7 @@ class RandomlyRepository(
     }
 
     suspend fun recordToolOpen(toolId: String) {
-        toolUsageDao.incrementUsage(toolId)
+        // Usage count is updated ONLY when the tool is actually used via recordResult
     }
 
     suspend fun ensureCleanPresets() {
@@ -172,5 +177,31 @@ class RandomlyRepository(
 
     suspend fun saveLastUsedItems(toolId: String, items: List<String>) {
         dataStoreManager.saveLastUsedItems(toolId, items)
+    }
+
+    suspend fun askAiChoice(
+        query: String,
+        preferenceMode: String,
+        customContext: String
+    ): Result<AiChoiceItem> {
+        val decision = GeminiApiClient.getAiChoice(query, preferenceMode, customContext).getOrThrow()
+        val item = AiChoiceItem(
+            query = query,
+            choice = decision.singleChoice,
+            reasoning = decision.reasoning,
+            preferenceMode = preferenceMode,
+            customContext = customContext,
+            timestamp = System.currentTimeMillis()
+        )
+        val id = aiChoiceDao.insertChoice(item)
+        return Result.success(item.copy(id = id))
+    }
+
+    suspend fun deleteAiChoice(id: Long) {
+        aiChoiceDao.deleteChoiceById(id)
+    }
+
+    suspend fun clearAllAiChoices() {
+        aiChoiceDao.clearAllChoices()
     }
 }

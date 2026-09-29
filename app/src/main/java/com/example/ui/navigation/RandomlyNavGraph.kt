@@ -24,6 +24,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.data.model.ToolType
+import com.example.ui.screens.AiChoiceScreen
 import com.example.ui.screens.FavoritesScreen
 import com.example.ui.screens.HistoryScreen
 import com.example.ui.screens.HomeScreen
@@ -129,8 +130,22 @@ fun RandomlyNavGraph(
                             ToolType.SPIN_BOTTLE -> Screen.Bottle.route
                         }
                         navController.navigate(targetRoute)
+                    },
+                    onNavigateToAiChoice = {
+                        AudioHapticFeedback.onTabSwitch(context, settings.soundEffectsEnabled, settings.hapticsEnabled)
+                        navController.navigate(Screen.AiChoice.route) {
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
                     }
                 )
+            }
+
+            composable(Screen.AiChoice.route) {
+                AiChoiceScreen(viewModel = viewModel)
             }
 
             composable(Screen.Favorites.route) {
