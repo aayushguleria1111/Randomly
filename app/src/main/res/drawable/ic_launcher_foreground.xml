@@ -5,141 +5,120 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- Centered and balanced group for circular and adaptive icon boundaries -->
+    <!-- Centered within the 108dp canvas, perfectly fitted inside the 66dp circular mask -->
     <group
         android:pivotX="54"
         android:pivotY="54"
-        android:scaleX="0.82"
-        android:scaleY="0.82"
-        android:translateX="-2.0"
-        android:translateY="-2.5">
+        android:scaleX="0.94"
+        android:scaleY="0.94">
 
-    <!-- 1. Ambient Ground Shadow under Both Dice (Centered at X=54, Y=72.5) -->
-    <path
-        android:fillColor="#32000000"
-        android:pathData="M 33,72.5 A 21,3 0 1,0 75,72.5 A 21,3 0 1,0 33,72.5 Z" />
+        <!-- 1. Soft Ground Shadow under Both Dice -->
+        <path
+            android:fillColor="#22000000"
+            android:pathData="M 28,74.5 A 26,4.5 0 1,0 80,74.5 A 26,4.5 0 1,0 28,74.5 Z" />
 
-    <!-- 2. DIE 1: Left Background Die (Centered at X=43, Y=52, Tilted -12°, 5 Pips) -->
-    <group
-        android:pivotX="43"
-        android:pivotY="52"
-        android:rotation="-12">
+        <!-- 2. DIE 1: Left Background Die (Centered at X=42.0, Y=48.0, Rotated -18°, 5 Pips) -->
+        <group
+            android:pivotX="42.0"
+            android:pivotY="48.0"
+            android:rotation="-18">
 
-        <!-- Die 1 Body (28x28 with 5.5dp corner radius) -->
-        <path
-            android:pathData="M 34.5,38.0 L 51.5,38.0 C 54.5,38.0 57.0,40.5 57.0,43.5 L 57.0,60.5 C 57.0,63.5 54.5,66.0 51.5,66.0 L 34.5,66.0 C 31.5,66.0 29.0,63.5 29.0,60.5 L 29.0,43.5 C 29.0,40.5 31.5,38.0 34.5,38.0 Z">
-            <aapt:attr name="android:fillColor">
-                <gradient
-                    android:startX="29"
-                    android:startY="38"
-                    android:endX="57"
-                    android:endY="66"
-                    android:type="linear">
-                    <item android:offset="0.0" android:color="#EEF2FF" />
-                    <item android:offset="0.65" android:color="#C7D2FE" />
-                    <item android:offset="1.0" android:color="#A5B4FC" />
-                </gradient>
-            </aapt:attr>
-        </path>
+            <!-- Die 1 Body (30x30 with 6.5dp corner radius) -->
+            <path
+                android:pathData="M 33.5,33.0 L 50.5,33.0 C 53.8,33.0 56.5,35.7 56.5,39.0 L 56.5,56.0 C 56.5,59.3 53.8,62.0 50.5,62.0 L 33.5,62.0 C 30.2,62.0 27.5,59.3 27.5,56.0 L 27.5,39.0 C 27.5,35.7 30.2,33.0 33.5,33.0 Z">
+                <aapt:attr name="android:fillColor">
+                    <gradient
+                        android:startX="27.5"
+                        android:startY="33.0"
+                        android:endX="56.5"
+                        android:endY="62.0"
+                        android:type="linear">
+                        <item android:offset="0.0" android:color="#F8FAFC" />
+                        <item android:offset="0.7" android:color="#EEF2FF" />
+                        <item android:offset="1.0" android:color="#E0E7FF" />
+                    </gradient>
+                </aapt:attr>
+            </path>
 
-        <!-- Die 1 Chamfer Border -->
-        <path
-            android:strokeColor="#818CF8"
-            android:strokeWidth="1.0"
-            android:pathData="M 34.5,38.0 L 51.5,38.0 C 54.5,38.0 57.0,40.5 57.0,43.5 L 57.0,60.5 C 57.0,63.5 54.5,66.0 51.5,66.0 L 34.5,66.0 C 31.5,66.0 29.0,63.5 29.0,60.5 L 29.0,43.5 C 29.0,40.5 31.5,38.0 34.5,38.0 Z" />
+            <!-- Die 1 Wider Boundary Stroke (1.8dp width for clear definition against white background) -->
+            <path
+                android:strokeColor="#64748B"
+                android:strokeWidth="1.8"
+                android:pathData="M 33.5,33.0 L 50.5,33.0 C 53.8,33.0 56.5,35.7 56.5,39.0 L 56.5,56.0 C 56.5,59.3 53.8,62.0 50.5,62.0 L 33.5,62.0 C 30.2,62.0 27.5,59.3 27.5,56.0 L 27.5,39.0 C 27.5,35.7 30.2,33.0 33.5,33.0 Z" />
 
-        <!-- 5 Pips (Deep Indigo #3730A3) -->
-        <!-- Center Pip -->
-        <path
-            android:fillColor="#3730A3"
-            android:pathData="M 43,52 m -2.4,0 a 2.4,2.4 0 1,0 4.8,0 a 2.4,2.4 0 1,0 -4.8,0" />
-        <!-- Top-Left Pip -->
-        <path
-            android:fillColor="#3730A3"
-            android:pathData="M 36,45 m -2.2,0 a 2.2,2.2 0 1,0 4.4,0 a 2.2,2.2 0 1,0 -4.4,0" />
-        <!-- Top-Right Pip -->
-        <path
-            android:fillColor="#3730A3"
-            android:pathData="M 50,45 m -2.2,0 a 2.2,2.2 0 1,0 4.4,0 a 2.2,2.2 0 1,0 -4.4,0" />
-        <!-- Bottom-Left Pip -->
-        <path
-            android:fillColor="#3730A3"
-            android:pathData="M 36,59 m -2.2,0 a 2.2,2.2 0 1,0 4.4,0 a 2.2,2.2 0 1,0 -4.4,0" />
-        <!-- Bottom-Right Pip -->
-        <path
-            android:fillColor="#3730A3"
-            android:pathData="M 50,59 m -2.2,0 a 2.2,2.2 0 1,0 4.4,0 a 2.2,2.2 0 1,0 -4.4,0" />
-    </group>
+            <!-- 5 Indigo Pips (#3730A3) -->
+            <!-- Center Pip -->
+            <path
+                android:fillColor="#3730A3"
+                android:pathData="M 42.0,48.0 m -2.5,0 a 2.5,2.5 0 1,0 5.0,0 a 2.5,2.5 0 1,0 -5.0,0" />
+            <!-- Top-Left Pip -->
+            <path
+                android:fillColor="#3730A3"
+                android:pathData="M 33.6,39.6 m -2.3,0 a 2.3,2.3 0 1,0 4.6,0 a 2.3,2.3 0 1,0 -4.6,0" />
+            <!-- Top-Right Pip -->
+            <path
+                android:fillColor="#3730A3"
+                android:pathData="M 50.4,39.6 m -2.3,0 a 2.3,2.3 0 1,0 4.6,0 a 2.3,2.3 0 1,0 -4.6,0" />
+            <!-- Bottom-Left Pip -->
+            <path
+                android:fillColor="#3730A3"
+                android:pathData="M 33.6,56.4 m -2.3,0 a 2.3,2.3 0 1,0 4.6,0 a 2.3,2.3 0 1,0 -4.6,0" />
+            <!-- Bottom-Right Pip -->
+            <path
+                android:fillColor="#3730A3"
+                android:pathData="M 50.4,56.4 m -2.3,0 a 2.3,2.3 0 1,0 4.6,0 a 2.3,2.3 0 1,0 -4.6,0" />
+        </group>
 
-    <!-- 3. DIE 2: Right Foreground Die (Centered at X=65, Y=56, Tilted +10°, 3 Diagonal Pips) -->
-    <group
-        android:pivotX="65"
-        android:pivotY="56"
-        android:rotation="10">
+        <!-- 3. DIE 2: Right Foreground Die (Centered at X=64.0, Y=54.0, Rotated +35°, 3 Diagonal Pips) -->
+        <group
+            android:pivotX="64.0"
+            android:pivotY="54.0"
+            android:rotation="35">
 
-        <!-- Die 2 Cast Shadow onto Die 1 -->
-        <path
-            android:fillColor="#24000000"
-            android:pathData="M 54.5,44.0 L 71.5,44.0 C 74.5,44.0 77.0,46.5 77.0,49.5 L 77.0,66.5 C 77.0,69.5 74.5,72.0 71.5,72.0 L 54.5,72.0 C 51.5,72.0 49.0,69.5 49.0,66.5 L 49.0,49.5 C 49.0,46.5 51.5,44.0 54.5,44.0 Z" />
+            <!-- Die 2 Cast Shadow onto Die 1 and Background -->
+            <path
+                android:fillColor="#22000000"
+                android:pathData="M 53.5,41.0 L 70.5,41.0 C 73.8,41.0 76.5,43.7 76.5,47.0 L 76.5,64.0 C 76.5,67.3 73.8,70.0 70.5,70.0 L 53.5,70.0 C 50.2,70.0 47.5,67.3 47.5,64.0 L 47.5,47.0 C 47.5,43.7 50.2,41.0 53.5,41.0 Z" />
 
-        <!-- Die 2 Porcelain Body (28x28 with 5.5dp corner radius) -->
-        <path
-            android:pathData="M 56.5,42.0 L 73.5,42.0 C 76.5,42.0 79.0,44.5 79.0,47.5 L 79.0,64.5 C 79.0,67.5 76.5,70.0 73.5,70.0 L 56.5,70.0 C 53.5,70.0 51.0,67.5 51.0,64.5 L 51.0,47.5 C 51.0,44.5 53.5,42.0 56.5,42.0 Z">
-            <aapt:attr name="android:fillColor">
-                <gradient
-                    android:startX="51"
-                    android:startY="42"
-                    android:endX="79"
-                    android:endY="70"
-                    android:type="linear">
-                    <item android:offset="0.0" android:color="#FFFFFF" />
-                    <item android:offset="0.8" android:color="#F8FAFC" />
-                    <item android:offset="1.0" android:color="#E2E8F0" />
-                </gradient>
-            </aapt:attr>
-        </path>
+            <!-- Die 2 Body (30x30 with 6.5dp corner radius, Radiant White) -->
+            <path
+                android:pathData="M 55.5,39.0 L 72.5,39.0 C 75.8,39.0 78.5,41.7 78.5,45.0 L 78.5,62.0 C 78.5,65.3 75.8,68.0 72.5,68.0 L 55.5,68.0 C 52.2,68.0 49.5,65.3 49.5,62.0 L 49.5,45.0 C 49.5,41.7 52.2,39.0 55.5,39.0 Z">
+                <aapt:attr name="android:fillColor">
+                    <gradient
+                        android:startX="49.5"
+                        android:startY="39.0"
+                        android:endX="78.5"
+                        android:endY="68.0"
+                        android:type="linear">
+                        <item android:offset="0.0" android:color="#FFFFFF" />
+                        <item android:offset="0.85" android:color="#FAFAFA" />
+                        <item android:offset="1.0" android:color="#F1F5F9" />
+                    </gradient>
+                </aapt:attr>
+            </path>
 
-        <!-- Die 2 Chamfer Border -->
-        <path
-            android:strokeColor="#CBD5E1"
-            android:strokeWidth="1.0"
-            android:pathData="M 56.5,42.0 L 73.5,42.0 C 76.5,42.0 79.0,44.5 79.0,47.5 L 79.0,64.5 C 79.0,67.5 76.5,70.0 73.5,70.0 L 56.5,70.0 C 53.5,70.0 51.0,67.5 51.0,64.5 L 51.0,47.5 C 51.0,44.5 53.5,42.0 56.5,42.0 Z" />
+            <!-- Die 2 Wider Boundary Stroke (1.8dp width in dark slate for strong definition) -->
+            <path
+                android:strokeColor="#334155"
+                android:strokeWidth="1.8"
+                android:pathData="M 55.5,39.0 L 72.5,39.0 C 75.8,39.0 78.5,41.7 78.5,45.0 L 78.5,62.0 C 78.5,65.3 75.8,68.0 72.5,68.0 L 55.5,68.0 C 52.2,68.0 49.5,65.3 49.5,62.0 L 49.5,45.0 C 49.5,41.7 52.2,39.0 55.5,39.0 Z" />
 
-        <!-- 3 Diagonal Pips (Electric Indigo #4F46E5 with soft highlight) -->
-        <!-- Top-Left Pip -->
-        <path
-            android:fillColor="#4F46E5"
-            android:pathData="M 58,49 m -2.5,0 a 2.5,2.5 0 1,0 5.0,0 a 2.5,2.5 0 1,0 -5.0,0" />
-        <path
-            android:fillColor="#818CF8"
-            android:pathData="M 57.2,48.2 m -0.8,0 a 0.8,0.8 0 1,0 1.6,0 a 0.8,0.8 0 1,0 -1.6,0" />
+            <!-- 3 Diagonal Electric Indigo Pips (#4338CA) -->
+            <!-- Top-Left Pip -->
+            <path
+                android:fillColor="#4338CA"
+                android:pathData="M 55.6,45.6 m -2.6,0 a 2.6,2.6 0 1,0 5.2,0 a 2.6,2.6 0 1,0 -5.2,0" />
 
-        <!-- Center Pip -->
-        <path
-            android:fillColor="#4F46E5"
-            android:pathData="M 65,56 m -2.5,0 a 2.5,2.5 0 1,0 5.0,0 a 2.5,2.5 0 1,0 -5.0,0" />
-        <path
-            android:fillColor="#818CF8"
-            android:pathData="M 64.2,55.2 m -0.8,0 a 0.8,0.8 0 1,0 1.6,0 a 0.8,0.8 0 1,0 -1.6,0" />
+            <!-- Center Pip -->
+            <path
+                android:fillColor="#4338CA"
+                android:pathData="M 64.0,54.0 m -2.6,0 a 2.6,2.6 0 1,0 5.2,0 a 2.6,2.6 0 1,0 -5.2,0" />
 
-        <!-- Bottom-Right Pip -->
-        <path
-            android:fillColor="#4F46E5"
-            android:pathData="M 72,63 m -2.5,0 a 2.5,2.5 0 1,0 5.0,0 a 2.5,2.5 0 1,0 -5.0,0" />
-        <path
-            android:fillColor="#818CF8"
-            android:pathData="M 71.2,62.2 m -0.8,0 a 0.8,0.8 0 1,0 1.6,0 a 0.8,0.8 0 1,0 -1.6,0" />
-    </group>
-
-    <!-- 4. Top-Right Fortune Star Sparkle (Centered at X=68, Y=31) -->
-    <path
-        android:fillColor="#FBBF24"
-        android:pathData="M 68,27.5 L 69.2,30.0 L 71.5,31.0 L 69.2,32.0 L 68,34.5 L 66.8,32.0 L 64.5,31.0 L 66.8,30.0 Z" />
-
-    <!-- 5. Mini Accent Sparkle (Centered at X=32, Y=34) -->
-    <path
-        android:fillColor="#A78BFA"
-        android:pathData="M 32,32 L 32.8,33.4 L 34,34 L 32.8,34.6 L 32,36 L 31.2,34.6 L 30,34 L 31.2,33.4 Z" />
+            <!-- Bottom-Right Pip -->
+            <path
+                android:fillColor="#4338CA"
+                android:pathData="M 72.4,62.4 m -2.6,0 a 2.6,2.6 0 1,0 5.2,0 a 2.6,2.6 0 1,0 -5.2,0" />
+        </group>
 
     </group>
 

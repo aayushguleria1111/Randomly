@@ -1,6 +1,8 @@
 Randomly 🎲
 
-Make decisions, generate possibilities, and leave the rest to chance.
+Make decisions, generate possibilities, and let randomness decide!
+
+"Let randomness decide!"
 
 Randomly is a simple and versatile randomization app packed with useful tools for everyday decisions, games, experiments, and just having fun.
 
@@ -24,4 +26,4 @@ Whether you're choosing what to play, making a decision, picking something for a
 
 Randomly is free and open source, with a clean interface and no unnecessary complexity.
 
-Randomly 1.0.0 — Make a choice. Leave the rest to chance.
+Randomly 1.1.0 — "Let randomness decide!"

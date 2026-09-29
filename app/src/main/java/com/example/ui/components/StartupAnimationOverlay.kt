@@ -119,12 +119,13 @@ fun StartupAnimationOverlay(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(
-                        text = "Decisions & Randomness, Made Simple",
+                        text = "“Let randomness decide!”",
                         style = MaterialTheme.typography.bodyMedium.copy(
-                            fontSize = 14.sp
+                            fontSize = 15.sp,
+                            fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
                         ),
                         fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
             }

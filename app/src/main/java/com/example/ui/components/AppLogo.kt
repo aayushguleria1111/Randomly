@@ -28,7 +28,7 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun AppLogo(
     size: Dp = 40.dp,
-    animated: Boolean = false,
+    animated: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     if (animated) {
@@ -55,8 +55,8 @@ fun AppLogo(
                     .background(
                         brush = Brush.radialGradient(
                             colors = listOf(
-                                Color(0xFF6366F1).copy(alpha = haloAlpha),
-                                Color(0xFFA855F7).copy(alpha = haloAlpha * 0.4f),
+                                Color(0xFF38BDF8).copy(alpha = haloAlpha),
+                                Color(0xFF6366F1).copy(alpha = haloAlpha * 0.6f),
                                 Color.Transparent
                             )
                         )
