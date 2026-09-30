@@ -26,4 +26,4 @@ Whether you're choosing what to play, making a decision, picking something for a
 
 Randomly is free and open source, with a clean interface and no unnecessary complexity.
 
-Randomly 1.1.0 — "Let randomness decide!"
+Randomly 1.1.1 — "Let randomness decide!"

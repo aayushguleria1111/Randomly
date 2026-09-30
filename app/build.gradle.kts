@@ -17,8 +17,8 @@ android {
     applicationId = "com.agcreations.randomly"
     minSdk = 24
     targetSdk = 36
-    versionCode = 2
-    versionName = "1.1.0"
+    versionCode = 3
+    versionName = "1.1.1"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
@@ -89,6 +89,14 @@ secrets {
 }
 
 googleServices { missingGoogleServicesStrategy = MissingGoogleServicesStrategy.WARN }
+
+tasks.matching { it.name.contains("GoogleServices") }.configureEach {
+  onlyIf {
+    val gsFile = file("google-services.json")
+    val appPkg = android.defaultConfig.applicationId ?: ""
+    !gsFile.exists() || (appPkg.isNotEmpty() && gsFile.readText().contains(appPkg))
+  }
+}
 
 dependencies {
   implementation(platform(libs.androidx.compose.bom))
